@@ -222,8 +222,8 @@
   </section>
 
   <footer style="max-width:1240px;margin:24px auto 0;padding:40px 20px;border-top:1px solid #1E293B;font-size:11px;color:#64748b;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between">
-    <span>Zlatyn Clip Studio V3 LITE+ • Editor intelligence • 30+ quality gate • Client-side FFmpeg • 1080×1920 MP4</span>
-    <span class="pill" style="padding:4px 8px">Client-side processing</span>
+    <span>Zlatyn Clip Studio V3 LITE+ • Editor intelligence • 30+ quality gate • Native backend FFmpeg + local fallback • 1080×1920 MP4</span>
+    <span class="pill" style="padding:4px 8px">Backend + local fallback</span>
   </footer>
 </div>
 
@@ -1015,6 +1015,86 @@
     b.addEventListener("click", function () { setAspect(b.getAttribute("data-aspect")); });
   });
 
+  var backendState = null;
+  var backendClientPromise = null;
+
+  async function getBackendState(){
+    if(backendState) return backendState;
+    try{
+      var response=await fetch("/api/health",{cache:"no-store"});
+      if(!response.ok) throw new Error("backend health "+response.status);
+      backendState=await response.json();
+    }catch(e){
+      backendState={backend:false,storageConfigured:false};
+    }
+    return backendState;
+  }
+
+  async function uploadSourceToBackend(sourceFile){
+    var state=await getBackendState();
+    if(!state.backend || !state.storageConfigured) return null;
+    if(!backendClientPromise){
+      backendClientPromise=import("https://esm.sh/@vercel/blob@2.3.0/client");
+    }
+    var mod=await backendClientPromise;
+    var result=await mod.upload("source/"+Date.now()+"-"+String(sourceFile.name||"video.mp4").replace(/[^a-zA-Z0-9._-]/g,"_"),sourceFile,{
+      access:state.access==="private"?"private":"public",
+      handleUploadUrl:"/api/upload",
+      multipart:true,
+      onUploadProgress:function(p){
+        var pct=Number(p.percentage||0);
+        setProgress(Math.min(12,Math.round(pct*.12)));
+        setStatus("Uploading source • "+Math.round(pct)+"%",true);
+      }
+    });
+    return result;
+  }
+
+  async function processBackendClip(sourceRef,clip,index,total,caption){
+    var response=await fetch("/api/process",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        source:sourceRef,
+        start:clip.start,
+        duration:clip.duration,
+        index:index,
+        caption:caption||""
+      })
+    });
+    var data={};
+    try{data=await response.json();}catch(e){}
+    if(!response.ok || !data.ok) throw new Error(data.error||("Backend processing failed ("+response.status+")"));
+    return data;
+  }
+
+  async function runBackendClips(sourceRef,total,caption){
+    var next=0, completed=0, failed=0, concurrency=Math.min(2,total);
+    async function worker(){
+      while(true){
+        var index=next++;
+        if(index>=total) return;
+        try{
+          setStatus("Server rendering clip "+(index+1)+"/"+total+" • native FFmpeg",true);
+          var data=await processBackendClip(sourceRef,clips[index],index,total,caption);
+          clips[index].realBlobUrl=data.url;
+          clips[index].blobUrl=data.url;
+          clips[index].downloadUrl=data.url;
+          clips[index].isReal=true;
+          completed++;
+        }catch(error){
+          failed++;
+          clips[index].serverError=error&&error.message?error.message:"Unknown processing error";
+          console.warn("Backend clip "+(index+1)+" failed:",error);
+        }
+        setProgress(15+Math.round((completed+failed)/Math.max(1,total)*80));
+        renderResults();
+      }
+    }
+    await Promise.all(Array.from({length:concurrency},worker));
+    return {completed:completed,failed:failed};
+  }
+
   $("generateBtn").addEventListener("click", async function () {
     if (!file || !url || duration === 0 || generating || analyzing) return;
 
@@ -1115,25 +1195,35 @@
     var failed=0;
 
     try {
-      await loadFFmpegEngine();
+      var state=await getBackendState();
+      var backendResult=null;
 
-      for(var ri=0;ri<total;ri++){
-        setStatus("Encoding clip "+(ri+1)+"/"+total+" • 1080×1920 • 9:16",true);
-        setProgress(15+Math.round((ri/Math.max(1,total))*80));
+      if(state.backend && state.storageConfigured){
+        setStatus("Preparing fast server renderer…",true);
+        var uploaded=await uploadSourceToBackend(file);
+        if(!uploaded || !uploaded.url) throw new Error("Server upload did not return a source URL.");
+        backendResult=await runBackendClips(uploaded.url,total,caption);
+        failed=backendResult.failed;
+      }else{
+        setStatus("Fast backend unavailable • using local renderer",true);
+        await loadFFmpegEngine();
 
-        var real=await renderClipFFmpeg(file,clips[ri].start,clips[ri].duration,ri,total,caption);
+        for(var ri=0;ri<total;ri++){
+          setStatus("Encoding clip "+(ri+1)+"/"+total+" • 1080×1920 • 9:16",true);
+          setProgress(15+Math.round((ri/Math.max(1,total))*80));
 
-        if(real){
-          clips[ri].realBlobUrl=real;
-          clips[ri].blobUrl=real;
-          clips[ri].isReal=true;
-        }else{
-          failed++;
+          var real=await renderClipFFmpeg(file,clips[ri].start,clips[ri].duration,ri,total,caption);
+          if(real){
+            clips[ri].realBlobUrl=real;
+            clips[ri].blobUrl=real;
+            clips[ri].isReal=true;
+          }else{
+            failed++;
+          }
+          renderResults();
+          drawTimeline();
+          await new Promise(function(resolve){setTimeout(resolve,isMobile?100:25);});
         }
-
-        renderResults();
-        drawTimeline();
-        await new Promise(function(resolve){setTimeout(resolve,isMobile?250:50);});
       }
 
       var ready=clips.filter(function(item){return item.isReal&&item.realBlobUrl;}).length;
@@ -1146,7 +1236,7 @@
     } catch(error) {
       console.error("Generator error:",error);
       setProgress(0);
-      setStatus("FFmpeg could not process this video: "+(error&&error.message?error.message:"unknown error"));
+      setStatus("Processing stopped: "+(error&&error.message?error.message:"unknown error"));
     } finally {
       generating=false;
       $("generateBtn").disabled=false;
