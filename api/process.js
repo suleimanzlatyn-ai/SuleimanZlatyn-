@@ -6,7 +6,6 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { pipeline } from "node:stream/promises";
-import crypto from "node:crypto";
 
 export const config={api:{bodyParser:{sizeLimit:"1mb"}}};
 
@@ -51,14 +50,14 @@ export default async function handler(req,res){
 
   const {source,start,duration,index,caption=""}=req.body||{};
   const s=Number(start), d=Number(duration);
-  if(!source || !Number.isFinite(s) || !Number.isFinite(d) || d<=0) return res.status(400).json({error:"Invalid clip request"});
+  if(!source || typeof source!=="string" || !Number.isFinite(s) || !Number.isFinite(d) || s<0 || d<=0 || d>180) return res.status(400).json({error:"Invalid clip request. Start must be non-negative and duration must be 1–180 seconds."});
 
   const dir=await fsp.mkdtemp(path.join(os.tmpdir(),"zlatyn-"));
   const input=path.join(dir,"source.mp4");
   const output=path.join(dir,"clip.mp4");
   try{
     await blobToFile(source,input);
-    let vf=["crop=ih*9/16:ih:(iw-ow)/2:0","scale=1080:1920","unsharp=5:5:0.8:3:3:0.4"].join(",");
+    let vf=["crop=if(gte(iw/ih\\,9/16)\\,ih*9/16\\,iw):if(gte(iw/ih\\,9/16)\\,ih\\,iw*16/9):(iw-ow)/2:(ih-oh)/2","scale=1080:1920","unsharp=5:5:0.8:3:3:0.4"].join(",");
     if(String(caption||"").trim()){
       const font=await ensureFont(dir);
       const text=escapeDrawtext(caption.trim().slice(0,180));
