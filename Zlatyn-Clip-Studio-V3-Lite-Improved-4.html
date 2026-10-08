@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zlatyn Clip Studio V3 Lite+</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body,#app{min-height:100%;background:#020617;color:#fff;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;letter-spacing:-0.01em}
+    body{overflow-x:hidden}
+    button,input{font:inherit;color:inherit}
+    button{cursor:pointer;background:transparent;border:none}
+    video,img{max-width:100%;display:block}
+    a{color:inherit;text-decoration:none}
+    ::-webkit-scrollbar{height:6px;width:6px}
+    ::-webkit-scrollbar-thumb{background:#1E293B;border-radius:999px}
+    .grid-pattern{background-image:linear-gradient(rgba(30,41,59,.3) 1px,transparent 1px),linear-gradient(90deg,rgba(30,41,59,.3) 1px,transparent 1px);background-size:32px 32px}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
+    @keyframes pulseGlow{0%,100%{opacity:.55}50%{opacity:1}}
+    .drag-active{border-style:solid!important;border-color:#3B82F6!important;background:#1E293B!important}
+    .btn-grad{background:linear-gradient(90deg,#2563EB,#06B6D4);box-shadow:0 10px 30px rgba(37,99,235,.35)}
+    .btn-grad:hover{filter:brightness(1.1)}
+    .btn-grad:disabled{opacity:.4;box-shadow:none;filter:none}
+    input[type=range]{accent-color:#22D3EE}
+    .card{background:#0F172A;border:1px solid #1E293B;border-radius:20px}
+    .pill{border-radius:999px;border:1px solid #1E293B;background:#020617}
+    .muted{color:#94a3b8}
+    .cyan{color:#22D3EE}
+  </style>
+</head>
+<body>
+<div id="app">
+  <header style="position:sticky;top:0;z-index:50;backdrop-filter:blur(24px);background:rgba(2,6,23,.8);border-bottom:1px solid #1E293B">
+    <div style="max-width:1240px;margin:0 auto;padding:0 20px;height:60px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#2563EB,#06B6D4);display:grid;place-items:center;font-weight:800;font-size:13px;box-shadow:0 0 20px rgba(37,99,235,.4)">Z</div>
+        <span style="font-weight:800;letter-spacing:-.025em;font-size:15px">ZLATYN <span class="cyan">CLIP</span> STUDIO</span>
+        <span class="pill" style="padding:2px 8px;font-size:10px;letter-spacing:.1em;color:#94a3b8">V3 LITE+</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="pill muted" style="padding:4px 12px;font-size:11px;display:none" id="hdrBadge">No CDN • Pure JS</span>
+        <a href="#studio" style="padding:0 16px;height:32px;display:grid;place-items:center;border-radius:999px;background:#fff;color:#000;font-size:13px;font-weight:700">Open Studio</a>
+      </div>
+    </div>
+  </header>
+
+  <section style="position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;overflow:hidden">
+      <div class="grid-pattern" style="position:absolute;inset:0;opacity:.35"></div>
+      <div style="position:absolute;top:-96px;left:-96px;width:360px;height:360px;border-radius:50%;filter:blur(60px);opacity:.55;background:radial-gradient(circle at 30% 30%,#2563EB,transparent 60%);animation:float 8s ease-in-out infinite"></div>
+      <div style="position:absolute;top:10%;right:-40px;width:320px;height:320px;border-radius:50%;filter:blur(60px);opacity:.45;background:radial-gradient(circle at 50% 50%,#06B6D4,transparent 65%);animation:float 9s ease-in-out infinite 1s"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent,rgba(2,6,23,.4),#020617)"></div>
+    </div>
+    <div style="position:relative;max-width:1240px;margin:0 auto;padding:56px 20px">
+      <div style="display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:999px;background:#0F172A;border:1px solid #1E293B;font-size:11px;color:#cbd5e1">
+        <span style="width:8px;height:8px;border-radius:50%;background:#22D3EE;box-shadow:0 0 10px #22D3EE;animation:pulseGlow 2s infinite"></span>
+        FIXED • Real energy peaks • Zero external scripts • Always loads
+      </div>
+      <h1 style="margin-top:20px;font-weight:800;line-height:.95;letter-spacing:-.025em;font-size:clamp(36px,6vw,64px)">
+        <span style="display:block">One Video.</span>
+        <span style="display:block;background:linear-gradient(90deg,#2563EB,#06B6D4);-webkit-background-clip:text;background-clip:text;color:transparent">Viral Clips.</span>
+        <span style="display:block">That Load.</span>
+      </h1>
+      <p style="margin-top:16px;font-size:17px;line-height:1.625;color:#cbd5e1;max-width:560px">
+        Pure vanilla JS. Peak detection seeks the video and measures audio energy with AnalyserNode. No broken decodeAudioData, no full-file ArrayBuffer, no CDN. Previews use media fragments. All clips are pre-cut automatically — up to 100.
+      </p>
+      <div style="margin-top:28px">
+        <a href="#studio" class="btn-grad" style="height:48px;padding:0 24px;border-radius:999px;display:inline-grid;place-items:center;font-weight:700;font-size:15px;color:#fff">Start Clipping — Free</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="studio" style="max-width:1240px;margin:0 auto;padding:0 20px 40px">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px">
+      <h2 style="font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px">
+        <span style="width:28px;height:28px;border-radius:8px;background:#0F172A;border:1px solid #1E293B;display:grid;place-items:center">&#9999;</span>
+        Studio
+        <span class="pill muted" style="padding:2px 8px;font-size:11px">PURE JS ENGINE</span>
+      </h2>
+      <div style="font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:8px">
+        <span id="statusPill" class="pill" style="padding:4px 10px">Idle</span>
+        <span id="metaPill" class="pill" style="padding:4px 10px;display:none"></span>
+      </div>
+    </div>
+
+    <div style="display:grid;gap:16px;grid-template-columns:1fr" id="studioGrid">
+      <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+        <div id="dropZone" class="card" style="border:2px dashed #1E3A8A;padding:20px;cursor:pointer;transition:.15s">
+          <div style="display:flex;align-items:center;gap:16px">
+            <div style="width:48px;height:48px;border-radius:12px;background:#1E293B;border:1px solid #1E3A8A;display:grid;place-items:center;font-size:20px">&#8682;</div>
+            <div style="flex:1;min-width:0">
+              <div id="fileName" style="font-weight:700;font-size:14px">Drop video or click to upload</div>
+              <div id="fileMeta" class="muted" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">MP4, WebM, MOV • 100% local • no CDN</div>
+            </div>
+            <span style="height:32px;padding:0 12px;border-radius:999px;background:#fff;color:#000;font-size:12px;font-weight:700;display:grid;place-items:center">Browse</span>
+          </div>
+          <input type="file" id="fileInput" accept="video/*" hidden>
+        </div>
+
+        <div class="card" style="padding:12px;display:flex;gap:8px;border-radius:16px">
+          <input id="linkInput" type="text" placeholder="YouTube or mp4 link (preview only)" style="flex:1;min-width:0;height:40px;border-radius:999px;background:#020617;border:1px solid #1E293B;padding:0 16px;font-size:13px;outline:none;color:#fff">
+          <button id="loadLinkBtn" style="height:40px;padding:0 16px;border-radius:999px;background:#1E293B;border:1px solid #1E293B;font-size:13px;font-weight:700">Load</button>
+        </div>
+
+        <div class="card" style="overflow:hidden">
+          <div style="padding:12px;display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:12px;font-weight:700;letter-spacing:.025em;color:#cbd5e1">PREVIEW</span>
+            <span id="aspectBadge" class="pill muted" style="padding:2px 8px;font-size:10px">9:16</span>
+          </div>
+          <div style="aspect-ratio:16/9;background:#000;position:relative">
+            <div id="ytWrap" style="display:none;width:100%;height:100%"></div>
+            <video id="previewVideo" controls playsinline style="width:100%;height:100%;object-fit:contain;background:#000;display:none"></video>
+            <div id="previewEmpty" style="position:absolute;inset:0;display:grid;place-items:center;color:#64748b;font-size:13px">Upload a video to preview</div>
+          </div>
+          <div style="padding:12px;background:rgba(2,6,23,.6)">
+            <canvas id="waveCanvas" style="width:100%;height:40px;border-radius:8px;border:1px solid #1E293B;background:#0F172A;display:block"></canvas>
+            <div style="margin-top:8px;display:flex;justify-content:space-between;font-size:11px;color:#94a3b8">
+              <span>Cyan/blue = energy peaks (AnalyserNode seek sampling)</span>
+              <span id="peakCount">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+        <div class="card" style="padding:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <h3 style="font-weight:700;font-size:13px;letter-spacing:.025em">SETTINGS</h3>
+            <span class="muted" style="font-size:11px">Pure JS • fixed peaks</span>
+          </div>
+
+          <div style="margin-top:20px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <label style="font-size:12px;font-weight:500;color:#cbd5e1">Number of clips</label>
+              <span id="clipCountVal" class="pill" style="padding:2px 8px;font-size:12px">10</span>
+            </div>
+            <div style="margin-top:8px;display:flex;align-items:center;gap:12px">
+              <input type="range" id="clipCount" min="1" max="100" value="10" style="flex:1;height:4px">
+              <input type="number" id="clipCountNum" min="1" max="100" value="10" style="width:64px;height:36px;border-radius:999px;background:#020617;border:1px solid #1E293B;text-align:center;font-size:13px;outline:none;color:#fff">
+            </div>
+          </div>
+
+          <div style="margin-top:20px;border-radius:12px;background:#020617;border:1px solid #1E293B;padding:12px">
+            <div style="font-size:12px;font-weight:600;color:#22D3EE">Auto-cut on Generate</div>
+            <div class="muted" style="margin-top:4px;font-size:11px">Phone: uses low-memory mode (360p, fewer clips in RAM) to avoid Chrome “Aw, Snap!”. Desktop: higher quality. For 50+ clips prefer a computer, or use FFmpeg .txt on your phone after Generate.</div>
+          </div>
+
+          <div style="margin-top:24px">
+            <label style="font-size:12px;font-weight:500;color:#cbd5e1">Clip length</label>
+            <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px" id="lenBtns">
+              <button data-len="15" class="len-btn pill" style="height:32px;padding:0 12px;font-size:12px;font-weight:700;color:#cbd5e1">15s</button>
+              <button data-len="30" class="len-btn pill" style="height:32px;padding:0 12px;font-size:12px;font-weight:700;background:#fff;color:#000;border-color:#fff">30s</button>
+              <button data-len="45" class="len-btn pill" style="height:32px;padding:0 12px;font-size:12px;font-weight:700;color:#cbd5e1">45s</button>
+              <button data-len="60" class="len-btn pill" style="height:32px;padding:0 12px;font-size:12px;font-weight:700;color:#cbd5e1">60s</button>
+              <button data-len="90" class="len-btn pill" style="height:32px;padding:0 12px;font-size:12px;font-weight:700;color:#cbd5e1">90s</button>
+              <div style="display:flex;align-items:center;gap:4px">
+                <input type="number" id="customLen" min="5" max="180" value="30" style="width:80px;height:32px;border-radius:999px;background:#020617;border:1px solid #1E293B;padding:0 12px;font-size:12px;outline:none;color:#fff">
+                <span class="muted" style="font-size:11px">sec</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:24px">
+            <label style="font-size:12px;font-weight:500;color:#cbd5e1">Aspect ratio (real renders)</label>
+            <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px" id="aspectBtns">
+              <button data-aspect="9:16" class="aspect-btn" style="height:40px;border-radius:999px;border:none;font-size:12px;font-weight:700;background:linear-gradient(90deg,#2563EB,#06B6D4);color:#fff;box-shadow:0 6px 20px rgba(37,99,235,.35)">9:16</button>
+              <button data-aspect="16:9" class="aspect-btn pill" style="height:40px;font-size:12px;font-weight:700;color:#cbd5e1">16:9</button>
+              <button data-aspect="1:1" class="aspect-btn pill" style="height:40px;font-size:12px;font-weight:700;color:#cbd5e1">1:1</button>
+            </div>
+          </div>
+
+          <div style="margin-top:24px;border-radius:14px;background:#020617;border:1px solid #1E293B;padding:12px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.025em;color:#cbd5e1">WHAT THIS VERSION FIXES</div>
+            <ul style="margin-top:8px;padding-left:16px;font-size:11px;color:#94a3b8;line-height:1.6">
+              <li>No React / no CDN — pure vanilla JS, always loads</li>
+              <li>Peaks via video + AnalyserNode seek sampling (works on MP4)</li>
+              <li>Never loads whole file into one ArrayBuffer</li>
+              <li>MediaRecorder mime fallback (vp9 → vp8 → webm)</li>
+              <li>FFmpeg command export for perfect quality cuts</li>
+            </ul>
+          </div>
+
+          <button id="generateBtn" class="btn-grad" disabled style="margin-top:20px;width:100%;height:48px;border-radius:999px;font-weight:800;font-size:14px;letter-spacing:.025em;color:#fff">Generate Clips</button>
+          <div style="margin-top:12px;height:8px;border-radius:999px;background:#020617;border:1px solid #1E293B;overflow:hidden">
+            <div id="progressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#2563EB,#22D3EE);transition:width .2s"></div>
+          </div>
+          <canvas id="timelineCanvas" style="margin-top:12px;width:100%;height:30px;border-radius:8px;border:1px solid #1E293B;background:#020617;display:block"></canvas>
+        </div>
+
+        <div class="card" style="padding:12px;border-radius:16px;display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:12px">
+            <div style="font-weight:700">Download All Clips</div>
+            <div class="muted" style="font-size:11px">Downloads all pre-cut short clips at once</div>
+          </div>
+          <button id="exportBtn" disabled style="height:36px;padding:0 16px;border-radius:999px;background:#fff;color:#000;font-size:12px;font-weight:700;opacity:.4">Download All</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:32px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h3 style="font-weight:700;font-size:14px;letter-spacing:.025em">RESULTS • <span id="resultsCount">0</span> clips</h3>
+        <span class="muted" style="font-size:11px">All clips pre-cut on Generate • Download = short file only</span>
+      </div>
+      <div id="resultsGrid" style="margin-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">
+        <div class="card" style="padding:32px;text-align:center;grid-column:1/-1">
+          <div style="margin:0 auto;width:48px;height:48px;border-radius:50%;background:#020617;border:1px solid #1E293B;display:grid;place-items:center">&#127909;</div>
+          <div style="margin-top:12px;font-weight:700;font-size:14px">No clips yet</div>
+          <div class="muted" style="font-size:12px;margin-top:4px">Upload → wait for peak analysis → Generate</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer style="max-width:1240px;margin:24px auto 0;padding:40px 20px;border-top:1px solid #1E293B;font-size:11px;color:#64748b;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between">
+    <span>Zlatyn Clip Studio V3 LITE+ • Pure vanilla JS • AnalyserNode peaks • Media Fragments + optional MediaRecorder</span>
+    <span class="pill" style="padding:4px 8px">No external scripts</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  function fmtTime(s) {
+    var m = Math.floor(s / 60);
+    var sec = Math.floor(s % 60);
+    return m + ":" + String(sec).padStart(2, "0");
+  }
+  function fmtSize(b) {
+    return b < 1048576 ? (b / 1024).toFixed(1) + " KB" : (b / 1048576).toFixed(2) + " MB";
+  }
+  function $(id) { return document.getElementById(id); }
+
+  var file = null, url = "", duration = 0, peaks = [], clips = [];
+  var clipCount = 10, clipLen = 30, aspect = "9:16";
+  var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (navigator.deviceMemory && navigator.deviceMemory <= 4);
+  // Mobile-safe defaults: fewer clips, shorter default length
+  if (isMobile) {
+    clipCount = 5;
+  }
+  var analyzing = false, generating = false, cutting = false;
+
+  var videoEl = $("previewVideo");
+  var waveCanvas = $("waveCanvas");
+  var timelineCanvas = $("timelineCanvas");
+  var dropZone = $("dropZone");
+  var fileInput = $("fileInput");
+
+  function layout() {
+    var g = $("studioGrid");
+    g.style.gridTemplateColumns = window.innerWidth >= 1024 ? "1.15fr 0.85fr" : "1fr";
+    if (window.innerWidth >= 768) $("hdrBadge").style.display = "inline";
+  }
+  layout();
+  window.addEventListener("resize", layout);
+
+  function setStatus(msg, working) {
+    var p = $("statusPill");
+    p.textContent = msg || "Idle";
+    if (working) {
+      p.style.background = "rgba(34,211,238,.1)";
+      p.style.borderColor = "rgba(34,211,238,.3)";
+      p.style.color = "#22D3EE";
+    } else {
+      p.style.background = "#020617";
+      p.style.borderColor = "#1E293B";
+      p.style.color = "#94a3b8";
+    }
+  }
+  function setProgress(pct) {
+    $("progressBar").style.width = Math.max(0, Math.min(100, pct)) + "%";
+  }
+  function updateMeta() {
+    var mp = $("metaPill");
+    if (duration > 0) {
+      mp.style.display = "inline";
+      mp.textContent = fmtTime(duration) + " • " + peaks.length + " peaks";
+    } else mp.style.display = "none";
+    $("peakCount").textContent = duration ? peaks.length + " candidates" : "—";
+  }
+  function updateGenLabel() {
+    $("generateBtn").textContent = "Generate " + clipCount + " Clips • " + clipLen + "s • " + aspect;
+  }
+
+  function fallbackPeaks(dur, len, maxC) {
+    // Spread evenly across the video (not random) so user still gets useful cuts
+    var out = [];
+    var n = Math.max(maxC, 1);
+    var span = Math.max(0.5, dur - len);
+    for (var i = 0; i < n; i++) {
+      var start = n === 1 ? 0 : (i / (n - 1)) * span;
+      out.push({ start: start, score: 0.5 });
+    }
+    return out;
+  }
+
+  // ---- Peak detection: audio RMS + visual frame energy ----
+  function analyzePeaks(videoUrl, dur, len, maxC, onProgress) {
+    return new Promise(function (resolve) {
+      var video = document.createElement("video");
+      video.src = videoUrl;
+      video.muted = true; // required for autoplay policies; we still read analyser from element source
+      video.playsInline = true;
+      video.preload = "auto";
+      video.crossOrigin = "anonymous";
+      video.volume = 0;
+
+      var samples = [];
+      var step = Math.max(0.5, Math.min(1.5, dur / 120));
+      var t = 0;
+      var done = false;
+      var canvas = document.createElement("canvas");
+      canvas.width = 160;
+      canvas.height = 90;
+      var ctx2d = canvas.getContext("2d", { willReadFrequently: true });
+      var prevFrame = null;
+      var AC = window.AudioContext || window.webkitAudioContext;
+      var actx = null, analyser = null, source = null, td = null, fd = null;
+
+      function cleanup() {
+        done = true;
+        try { video.pause(); } catch (e) {}
+        try { if (source) source.disconnect(); } catch (e) {}
+        try { if (actx) actx.close(); } catch (e) {}
+        video.removeAttribute("src");
+        video.load();
+      }
+
+      function finish() {
+        if (done && samples.length) {
+          // already finished
+        }
+        cleanup();
+        // normalize scores
+        var maxS = 0;
+        for (var i = 0; i < samples.length; i++) if (samples[i].score > maxS) maxS = samples[i].score;
+        if (maxS < 0.001) {
+          resolve(fallbackPeaks(dur, len, maxC));
+          return;
+        }
+        for (var j = 0; j < samples.length; j++) samples[j].score = Math.min(1, samples[j].score / maxS);
+
+        samples.sort(function (a, b) { return b.score - a.score; });
+        var picked = [];
+        for (var k = 0; k < samples.length; k++) {
+          var p = samples[k];
+          if (picked.length >= maxC) break;
+          if (p.start > dur - Math.min(len, dur) - 0.2) continue;
+          if (p.score < 0.08) continue;
+          var overlap = false;
+          for (var m = 0; m < picked.length; m++) {
+            if (Math.abs(picked[m].start - p.start) < len * 0.7) { overlap = true; break; }
+          }
+          if (!overlap) picked.push(p);
+        }
+        resolve(picked.length ? picked : fallbackPeaks(dur, len, maxC));
+      }
+
+      function measure() {
+        var audioScore = 0;
+        var visualScore = 0;
+
+        if (analyser && td && fd) {
+          analyser.getByteTimeDomainData(td);
+          analyser.getByteFrequencyData(fd);
+          var sum = 0;
+          for (var i = 0; i < td.length; i++) {
+            var v = (td[i] - 128) / 128;
+            sum += v * v;
+          }
+          var rms = Math.sqrt(sum / td.length);
+          var freqSum = 0;
+          for (var f = 0; f < fd.length; f++) freqSum += fd[f];
+          var freqAvg = freqSum / (fd.length * 255);
+          audioScore = rms * 3 + freqAvg * 2;
+        }
+
+        if (ctx2d && video.videoWidth) {
+          try {
+            ctx2d.drawImage(video, 0, 0, canvas.width, canvas.height);
+            var frame = ctx2d.getImageData(0, 0, canvas.width, canvas.height).data;
+            if (prevFrame) {
+              var diff = 0, n = frame.length;
+              for (var i = 0; i < n; i += 16) {
+                diff += Math.abs(frame[i] - prevFrame[i]);
+              }
+              visualScore = (diff / (n / 16)) / 255;
+            }
+            prevFrame = frame;
+          } catch (e) {}
+        }
+
+        var score = Math.max(audioScore, visualScore * 1.4);
+        // slight boost for middle of video (hooks often not at very start)
+        if (t > 3 && t < dur - 3) score *= 1.05;
+        samples.push({ start: t, score: score });
+      }
+
+      function sampleAt() {
+        if (done) return;
+        if (t >= dur - 0.15) {
+          finish();
+          return;
+        }
+        var target = Math.min(t, dur - 0.05);
+        var onSeeked = function () {
+          video.removeEventListener("seeked", onSeeked);
+          // play a tiny bit so decoder + analyser update
+          var p = video.play();
+          if (p && p.catch) p.catch(function () {});
+          setTimeout(function () {
+            if (done) return;
+            video.pause();
+            measure();
+            if (onProgress) onProgress(Math.min(99, Math.round((t / dur) * 100)));
+            t += step;
+            sampleAt();
+          }, 120);
+        };
+        video.addEventListener("seeked", onSeeked);
+        try {
+          if (Math.abs(video.currentTime - target) < 0.05) {
+            onSeeked();
+          } else {
+            video.currentTime = target;
+          }
+        } catch (e) {
+          t += step;
+          sampleAt();
+        }
+      }
+
+      video.addEventListener("loadedmetadata", function () {
+        try {
+          if (AC) {
+            actx = new AC();
+            if (actx.state === "suspended") actx.resume().catch(function () {});
+            source = actx.createMediaElementSource(video);
+            analyser = actx.createAnalyser();
+            analyser.fftSize = 2048;
+            analyser.smoothingTimeConstant = 0.2;
+            source.connect(analyser);
+            // also connect to destination at near-zero gain so some browsers process audio
+            var gain = actx.createGain();
+            gain.gain.value = 0.0001;
+            analyser.connect(gain);
+            gain.connect(actx.destination);
+            td = new Uint8Array(analyser.fftSize);
+            fd = new Uint8Array(analyser.frequencyBinCount);
+          }
+        } catch (e) {}
+        sampleAt();
+      });
+      video.addEventListener("error", function () { finish(); });
+      setTimeout(function () { if (!done) finish(); }, Math.min(60000, dur * 100 + 10000));
+    });
+  }
+
+  // ---- Reliable clip cut using video.captureStream() ----
+  function pickMime() {
+    if (typeof MediaRecorder === "undefined") return "";
+    var cands = [
+      "video/webm;codecs=vp9,opus",
+      "video/webm;codecs=vp8,opus",
+      "video/webm;codecs=vp9",
+      "video/webm;codecs=vp8",
+      "video/webm"
+    ];
+    for (var i = 0; i < cands.length; i++) {
+      if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(cands[i])) return cands[i];
+    }
+    return "";
+  }
+
+  function waitSeek(video, time) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var finish = function () {
+        if (done) return;
+        done = true;
+        video.removeEventListener("seeked", finish);
+        resolve();
+      };
+      video.addEventListener("seeked", finish);
+      try {
+        video.currentTime = Math.max(0, time);
+      } catch (e) {
+        finish();
+        return;
+      }
+      // if already there
+      if (Math.abs(video.currentTime - time) < 0.12) finish();
+      setTimeout(finish, 3000);
+    });
+  }
+
+  function renderClip(blobUrl, start, dur) {
+    return new Promise(function (resolve) {
+      var mime = pickMime();
+      if (!mime || typeof MediaRecorder === "undefined") {
+        resolve(null);
+        return;
+      }
+
+      var video = document.createElement("video");
+      video.src = blobUrl;
+      video.muted = false;
+      video.playsInline = true;
+      video.preload = "auto";
+      video.crossOrigin = "anonymous";
+      // keep element off-DOM but some browsers need it in document for captureStream
+      video.style.cssText = "position:fixed;left:-9999px;width:320px;height:180px;opacity:0;pointer-events:none";
+      document.body.appendChild(video);
+
+      var killTimer = setTimeout(function () {
+        cleanup();
+        resolve(null);
+      }, Math.min(45000, dur * 1000 + 15000));
+
+      var rec = null;
+      var chunks = [];
+
+      function cleanup() {
+        clearTimeout(killTimer);
+        try { if (rec && rec.state !== "inactive") rec.stop(); } catch (e) {}
+        try { video.pause(); } catch (e) {}
+        try { document.body.removeChild(video); } catch (e) {}
+      }
+
+      video.addEventListener("error", function () {
+        cleanup();
+        resolve(null);
+      });
+
+      video.addEventListener("loadedmetadata", function () {
+        var end = Math.min(start + dur, video.duration || start + dur);
+        var actualDur = Math.max(0.5, end - start);
+
+        waitSeek(video, start).then(function () {
+          // Adaptive quality: light on mobile to prevent Aw, Snap! OOM
+          var canvas = document.createElement("canvas");
+          var isV = aspect === "9:16";
+          var isS = aspect === "1:1";
+          var mob = isMobile;
+          // Mobile: 360p-ish; Desktop: 720p
+          if (mob) {
+            canvas.width = isV ? 360 : isS ? 360 : 640;
+            canvas.height = isV ? 640 : isS ? 360 : 360;
+          } else {
+            canvas.width = isV ? 720 : isS ? 720 : 1280;
+            canvas.height = isV ? 1280 : isS ? 720 : 720;
+          }
+          var c2d = canvas.getContext("2d", { alpha: false });
+          c2d.imageSmoothingEnabled = true;
+          c2d.imageSmoothingQuality = mob ? "medium" : "high";
+          var stream = canvas.captureStream(mob ? 15 : 30);
+          var drawing = true;
+          (function draw() {
+            if (!drawing) return;
+            try {
+              if (video.readyState >= 2 && video.videoWidth) {
+                var vw = video.videoWidth, vh = video.videoHeight;
+                var cw = canvas.width, ch = canvas.height;
+                var vr = vw / vh, cr = cw / ch;
+                var sx = 0, sy = 0, sw = vw, sh = vh;
+                if (vr > cr) { sw = vh * cr; sx = (vw - sw) / 2; }
+                else { sh = vw / cr; sy = (vh - sh) / 2; }
+                c2d.fillStyle = "#000";
+                c2d.fillRect(0, 0, cw, ch);
+                c2d.drawImage(video, sx, sy, sw, sh, 0, 0, cw, ch);
+              }
+            } catch (e) {}
+            requestAnimationFrame(draw);
+          })();
+          setTimeout(function () { drawing = false; }, actualDur * 1000 + 400);
+          try {
+            var ACc = window.AudioContext || window.webkitAudioContext;
+            if (ACc) {
+              var actx = new ACc();
+              var asrc = actx.createMediaElementSource(video);
+              var dest = actx.createMediaStreamDestination();
+              asrc.connect(dest);
+              dest.stream.getAudioTracks().forEach(function (t) { stream.addTrack(t); });
+            }
+          } catch (e) {}
+
+          try {
+            rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: isMobile ? 800000 : 4000000, audioBitsPerSecond: isMobile ? 64000 : 128000 });
+          } catch (e) {
+            try { rec = new MediaRecorder(stream); } catch (e2) {
+              cleanup();
+              resolve(null);
+              return;
+            }
+          }
+
+          rec.ondataavailable = function (e) {
+            if (e.data && e.data.size > 0) chunks.push(e.data);
+          };
+
+          rec.onstop = function () {
+            cleanup();
+            if (!chunks.length) {
+              resolve(null);
+              return;
+            }
+            var blob = new Blob(chunks, { type: mime.split(";")[0] || "video/webm" });
+            // Reject if suspiciously large (likely whole file) or tiny (failed)
+            var expectedMin = actualDur * 5000; // ~5KB/s very low bound
+            var expectedMax = actualDur * 2000000; // 2MB/s high bound
+            if (blob.size < 2000) {
+              resolve(null);
+              return;
+            }
+            // If somehow we got almost the full original file size, reject
+            if (file && blob.size > file.size * 0.85 && actualDur < duration * 0.5) {
+              resolve(null);
+              return;
+            }
+            resolve(URL.createObjectURL(blob));
+          };
+
+          rec.start(200);
+          video.play().then(function () {
+            setTimeout(function () {
+              try { video.pause(); } catch (e) {}
+              try {
+                if (rec && rec.state !== "inactive") rec.stop();
+              } catch (e) {}
+            }, actualDur * 1000 + 250);
+          }).catch(function () {
+            // play failed — still try timed stop
+            setTimeout(function () {
+              try {
+                if (rec && rec.state !== "inactive") rec.stop();
+              } catch (e) {}
+            }, actualDur * 1000 + 250);
+          });
+        });
+      });
+    });
+  }
+
+  function drawWave() {
+    if (!waveCanvas || duration === 0) return;
+    var c = waveCanvas, ctx = c.getContext("2d", { alpha: false });
+    if (!ctx) return;
+    var W = c.width = (c.clientWidth * 2) || 600, H = c.height = 80;
+    ctx.fillStyle = "#0F172A"; ctx.fillRect(0, 0, W, H);
+    var bars = Math.min(180, Math.floor(duration * 2)), gap = 2, bw = (W - bars * gap) / bars;
+    for (var i = 0; i < bars; i++) {
+      var t = (i / bars) * duration, peak = null;
+      for (var j = 0; j < peaks.length; j++) {
+        if (Math.abs(peaks[j].start - t) < 0.8) { peak = peaks[j]; break; }
+      }
+      var h = (peak ? Math.max(0.12, peak.score) : 0.12) * H * 0.85;
+      ctx.fillStyle = peak ? (peak.score > 0.65 ? "#22D3EE" : "#3B82F6") : "#1E293B";
+      ctx.fillRect(i * (bw + gap), H - h, bw, h);
+      if (peak) { ctx.fillStyle = "#22D3EE"; ctx.fillRect(i * (bw + gap) + bw / 2 - 1, 0, 2, 5); }
+    }
+  }
+
+  function drawTimeline() {
+    if (!timelineCanvas || duration === 0) return;
+    var c = timelineCanvas, ctx = c.getContext("2d", { alpha: false });
+    if (!ctx) return;
+    var W = c.width = (c.clientWidth * 2) || 600, H = c.height = 120;
+    ctx.fillStyle = "#020617"; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = "#1E293B"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.stroke();
+    for (var i = 0; i < clips.length; i++) {
+      var cl = clips[i], x = (cl.start / duration) * W, w = (cl.duration / duration) * W;
+      ctx.fillStyle = cl.isReal ? "rgba(34,211,238,0.9)" : "rgba(37,99,235,0.7)";
+      ctx.fillRect(x, 8, Math.max(4, w), H - 16);
+      ctx.fillStyle = "#0F172A"; ctx.fillRect(x, 8, 2, H - 16);
+    }
+  }
+
+  function loadFile(f) {
+    if (!f || !f.type || f.type.indexOf("video/") !== 0) { setStatus("Not a video file"); return; }
+    if (url) URL.revokeObjectURL(url);
+    for (var i = 0; i < clips.length; i++) {
+      if (clips[i].realBlobUrl) URL.revokeObjectURL(clips[i].realBlobUrl);
+    }
+    file = f; url = URL.createObjectURL(f); clips = []; peaks = []; duration = 0;
+    setProgress(0);
+    $("ytWrap").style.display = "none"; $("ytWrap").innerHTML = "";
+    videoEl.style.display = "block"; $("previewEmpty").style.display = "none";
+    videoEl.src = url;
+    $("fileName").textContent = f.name;
+    $("fileMeta").textContent = fmtSize(f.size) + " • reading duration…";
+    setStatus("Loaded " + f.name);
+    renderResults(); updateMeta();
+  }
+
+  dropZone.addEventListener("click", function () { fileInput.click(); });
+  dropZone.addEventListener("dragover", function (e) { e.preventDefault(); dropZone.classList.add("drag-active"); });
+  dropZone.addEventListener("dragleave", function () { dropZone.classList.remove("drag-active"); });
+  dropZone.addEventListener("drop", function (e) {
+    e.preventDefault(); dropZone.classList.remove("drag-active");
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener("change", function () {
+    if (fileInput.files && fileInput.files[0]) loadFile(fileInput.files[0]);
+  });
+
+  videoEl.addEventListener("loadedmetadata", function () {
+    if (!isFinite(videoEl.duration)) return;
+    duration = videoEl.duration;
+    $("fileMeta").textContent = fmtSize(file.size) + " • " + fmtTime(duration);
+    $("generateBtn").disabled = false;
+    analyzing = true;
+    setStatus("Analyzing energy (audio + motion)…", true);
+    analyzePeaks(url, duration, clipLen, clipCount * 4, function (p) { setProgress(p); })
+      .then(function (list) {
+        peaks = list; analyzing = false; setProgress(0);
+        var avg = 0;
+        for (var i = 0; i < list.length; i++) avg += list[i].score;
+        avg = list.length ? avg / list.length : 0;
+        setStatus("Ready • " + fmtTime(duration) + " • " + list.length + " peaks (avg " + Math.round(avg * 100) + ")");
+        updateMeta(); drawWave();
+      })
+      .catch(function () {
+        peaks = fallbackPeaks(duration, clipLen, clipCount * 3);
+        analyzing = false; setProgress(0);
+        setStatus("Ready • evenly spaced cuts (analysis weak)");
+        updateMeta(); drawWave();
+      });
+  });
+
+  $("loadLinkBtn").addEventListener("click", function () {
+    var p = $("linkInput").value.trim();
+    if (!p) { setStatus("Paste a YouTube or MP4 link first"); return; }
+    var m = p.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
+    if (m) {
+      videoEl.style.display = "none"; $("previewEmpty").style.display = "none";
+      $("ytWrap").style.display = "block";
+      $("ytWrap").innerHTML = '<iframe style="width:100%;height:100%;border:0" src="https://www.youtube.com/embed/' + m[1] + '" allowfullscreen></iframe>';
+      setStatus("YouTube preview only — upload a file to clip");
+      return;
+    }
+    setStatus("Upload a video file to clip");
+  });
+
+  function syncCount(v) {
+    clipCount = Math.min(isMobile ? 20 : 100, Math.max(1, v));
+    $("clipCount").value = clipCount; $("clipCountNum").value = clipCount;
+    $("clipCountVal").textContent = clipCount; updateGenLabel();
+  }
+  $("clipCount").addEventListener("input", function () { syncCount(parseInt($("clipCount").value, 10)); });
+  $("clipCountNum").addEventListener("change", function () { syncCount(parseInt($("clipCountNum").value, 10) || 1); });
+
+  function setLen(s) {
+    clipLen = s; $("customLen").value = s;
+    document.querySelectorAll(".len-btn").forEach(function (b) {
+      var active = parseInt(b.getAttribute("data-len"), 10) === s;
+      b.style.background = active ? "#fff" : "#020617";
+      b.style.color = active ? "#000" : "#cbd5e1";
+      b.style.borderColor = active ? "#fff" : "#1E293B";
+    });
+    updateGenLabel();
+  }
+  document.querySelectorAll(".len-btn").forEach(function (b) {
+    b.addEventListener("click", function () { setLen(parseInt(b.getAttribute("data-len"), 10)); });
+  });
+  $("customLen").addEventListener("change", function () {
+    setLen(Math.min(180, Math.max(5, parseInt($("customLen").value, 10) || 5)));
+  });
+
+  function setAspect(a) {
+    aspect = a; $("aspectBadge").textContent = a;
+    document.querySelectorAll(".aspect-btn").forEach(function (b) {
+      var active = b.getAttribute("data-aspect") === a;
+      if (active) {
+        b.style.background = "linear-gradient(90deg,#2563EB,#06B6D4)";
+        b.style.color = "#fff"; b.style.border = "none";
+        b.style.boxShadow = "0 6px 20px rgba(37,99,235,.35)";
+      } else {
+        b.style.background = "#020617"; b.style.color = "#cbd5e1";
+        b.style.border = "1px solid #1E293B"; b.style.boxShadow = "none";
+      }
+    });
+    updateGenLabel();
+  }
+  document.querySelectorAll(".aspect-btn").forEach(function (b) {
+    b.addEventListener("click", function () { setAspect(b.getAttribute("data-aspect")); });
+  });
+
+  $("generateBtn").addEventListener("click", function () {
+    if (!file || !url || duration === 0 || generating || analyzing) return;
+    generating = true; $("generateBtn").disabled = true;
+    setProgress(5); setStatus("Selecting best moments…", true);
+
+    var candidates = peaks.length ? peaks.slice() : fallbackPeaks(duration, clipLen, clipCount * 2);
+    candidates.sort(function (a, b) { return b.score - a.score; });
+    var chosen = [];
+    for (var i = 0; i < candidates.length; i++) {
+      var c = candidates[i];
+      if (chosen.length >= clipCount) break;
+      if (c.start > duration - Math.min(clipLen, duration) - 0.3) continue;
+      var ok = true;
+      for (var j = 0; j < chosen.length; j++) {
+        if (Math.abs(chosen[j].start - c.start) < clipLen * 0.7) { ok = false; break; }
+      }
+      if (ok) chosen.push(c);
+    }
+    // fill evenly if not enough
+    if (chosen.length < clipCount) {
+      var need = clipCount - chosen.length;
+      var span = Math.max(0.5, duration - clipLen);
+      for (var fi = 0; fi < clipCount && chosen.length < clipCount; fi++) {
+        var s = clipCount === 1 ? 0 : (fi / (clipCount - 1)) * span;
+        var ok2 = true;
+        for (var k = 0; k < chosen.length; k++) {
+          if (Math.abs(chosen[k].start - s) < clipLen * 0.5) { ok2 = false; break; }
+        }
+        if (ok2) chosen.push({ start: s, score: 0.45 });
+      }
+    }
+    chosen.sort(function (a, b) { return a.start - b.start; });
+
+    clips = chosen.map(function (c, idx) {
+      var start = Math.max(0, Math.min(c.start, Math.max(0, duration - 1)));
+      var d = Math.min(clipLen, Math.max(1, duration - start));
+      return {
+        id: idx, start: start, duration: d, score: c.score,
+        title: "Clip #" + (idx + 1) + " • " + (c.score > 0.75 ? "High energy" : c.score > 0.5 ? "Good hook" : "Moment"),
+        blobUrl: url + "#t=" + start.toFixed(2) + "," + (start + d).toFixed(2),
+        downloadUrl: url, startFormatted: fmtTime(start), realBlobUrl: null, isReal: false
+      };
+    });
+    setProgress(20); renderResults(); drawTimeline();
+
+    // Pre-cut clips with mobile memory safety
+    // Android Chrome crashes (Aw, Snap!) if we hold too many WebM blobs + high-res canvases
+    var total = clips.length;
+    var maxHold = isMobile ? 3 : 20; // max short blobs kept in RAM at once
+    var ri = 0;
+    var failed = 0;
+    var cutCount = 0;
+    function nextReal() {
+      if (ri >= total) {
+        setProgress(100);
+        var realN = clips.filter(function (c) { return c.isReal; }).length;
+        setStatus("Done • " + realN + "/" + total + " ready" + (failed ? " (" + failed + " failed)" : "") + (isMobile ? " • mobile safe mode" : ""));
+        generating = false; $("generateBtn").disabled = false;
+        $("exportBtn").disabled = false; $("exportBtn").style.opacity = "1";
+        setTimeout(function () { setProgress(0); }, 2500);
+        renderResults();
+        return;
+      }
+      setStatus("Cutting " + (ri + 1) + "/" + total + (isMobile ? " (mobile low-mem mode)" : "") + "…", true);
+      setProgress(15 + Math.round((ri / Math.max(1, total)) * 80));
+      renderClip(url, clips[ri].start, clips[ri].duration).then(function (real) {
+        if (real) {
+          clips[ri].realBlobUrl = real;
+          clips[ri].blobUrl = real;
+          clips[ri].isReal = true;
+          cutCount++;
+          // Free older blobs on mobile so Chrome does not OOM
+          if (isMobile && cutCount > maxHold) {
+            for (var j = 0; j < ri; j++) {
+              if (clips[j].isReal && clips[j].realBlobUrl && (ri - j) > maxHold) {
+                try { URL.revokeObjectURL(clips[j].realBlobUrl); } catch (e) {}
+                // keep isReal flag but mark blob released — will recut on download if needed
+                clips[j].realBlobUrl = null;
+                clips[j].blobUrl = url + "#t=" + clips[j].start.toFixed(2) + "," + (clips[j].start + clips[j].duration).toFixed(2);
+                clips[j]._released = true;
+              }
+            }
+          }
+        } else {
+          failed++;
+        }
+        if (ri % 2 === 0 || ri === total - 1) {
+          renderResults();
+          drawTimeline();
+        }
+        ri++;
+        // Longer pause on mobile to let GC run
+        setTimeout(nextReal, isMobile ? 600 : 200);
+      });
+    }
+    nextReal();
+  });
+
+  function renderResults() {
+    $("resultsCount").textContent = clips.length;
+    var grid = $("resultsGrid");
+    if (!clips.length) {
+      grid.innerHTML = '<div class="card" style="padding:32px;text-align:center;grid-column:1/-1"><div style="margin:0 auto;width:48px;height:48px;border-radius:50%;background:#020617;border:1px solid #1E293B;display:grid;place-items:center">🎬</div><div style="margin-top:12px;font-weight:700;font-size:14px">No clips yet</div><div class="muted" style="font-size:12px;margin-top:4px">Upload → wait for analysis → Generate → Download Cut</div></div>';
+      return;
+    }
+    var html = "";
+    for (var i = 0; i < clips.length; i++) {
+      var c = clips[i];
+      // Preview: for REAL use the short blob; for others use fragment (playback only)
+      var src = c.isReal && c.realBlobUrl ? c.realBlobUrl : (url + "#t=" + c.start.toFixed(2) + "," + (c.start + c.duration).toFixed(2));
+      html += '<div class="card" style="overflow:hidden;border-radius:18px">';
+      html += '<div style="position:relative;aspect-ratio:9/16;background:#000">';
+      html += '<video src="' + src + '" controls preload="metadata" playsinline style="width:100%;height:100%;object-fit:contain;background:#000"></video>';
+      html += '<div style="position:absolute;top:8px;left:8px;display:flex;gap:6px">';
+      html += '<span style="font-size:10px;padding:2px 8px;border-radius:999px;font-weight:700;' + (c.isReal ? "background:#22D3EE;color:#000" : "background:#f59e0b;color:#000") + '">' + (c.isReal ? "READY" : "CUTTING…") + "</span>";
+      html += '<span style="font-size:10px;padding:2px 8px;border-radius:999px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);color:#fff">' + c.startFormatted + "</span></div>";
+      html += '<div style="position:absolute;top:8px;right:8px;font-size:10px;padding:2px 8px;border-radius:999px;background:linear-gradient(90deg,#2563EB,#06B6D4);color:#fff;font-weight:700">' + Math.round(c.score * 100) + " score</div></div>";
+      html += '<div style="padding:12px"><div style="font-weight:700;font-size:13px">' + c.title + "</div>";
+      html += '<div style="margin-top:4px;font-size:11px;color:#94a3b8">' + Math.round(c.duration) + "s cut • " + fmtTime(c.start) + " → " + fmtTime(c.start + c.duration) + "</div>";
+      if (!c.isReal) {
+        html += '<div style="margin-top:6px;font-size:10px;color:#f59e0b">Still cutting… wait for Generate to finish</div>';
+      }
+      html += '<div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+      if (c.isReal) {
+        html += '<button data-dl="' + i + '" data-mode="video" style="height:36px;border-radius:999px;background:#fff;color:#000;font-size:12px;font-weight:700">Download</button>';
+      } else {
+        html += '<button disabled style="height:36px;border-radius:999px;background:#1E293B;color:#64748b;font-size:12px;font-weight:700;opacity:.6">Cutting…</button>';
+      }
+      html += '<button data-dl="' + i + '" data-mode="ffmpeg" style="height:36px;border-radius:999px;background:#020617;border:1px solid #1E293B;font-size:12px;font-weight:700;color:#e2e8f0">FFmpeg .txt</button>';
+      html += "</div></div></div>";
+    }
+    grid.innerHTML = html;
+    grid.querySelectorAll("[data-dl]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        downloadOne(clips[parseInt(btn.getAttribute("data-dl"), 10)], btn.getAttribute("data-mode"));
+      });
+    });
+  }
+
+  function triggerDownload(blobUrl, filename) {
+    var a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = filename;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { try { document.body.removeChild(a); } catch (e) {} }, 200);
+  }
+
+  function ensureRealClip(clip) {
+    return new Promise(function (resolve) {
+      if (clip.realBlobUrl && clip.isReal) {
+        resolve(clip);
+        return;
+      }
+      if (cutting) {
+        setStatus("Already cutting another clip — wait…");
+        resolve(null);
+        return;
+      }
+      cutting = true;
+      setStatus("Cutting short clip #" + (clip.id + 1) + " (" + Math.round(clip.duration) + "s)…", true);
+      renderClip(url, clip.start, clip.duration).then(function (real) {
+        cutting = false;
+        if (real) {
+          clip.realBlobUrl = real;
+          clip.blobUrl = real;
+          clip.isReal = true;
+          renderResults();
+          drawTimeline();
+          resolve(clip);
+        } else {
+          setStatus("Cut failed — use FFmpeg .txt for a guaranteed short MP4");
+          resolve(null);
+        }
+      });
+    });
+  }
+
+  function downloadOne(clip, mode) {
+    if (mode === "ffmpeg") {
+      var txt = "FFmpeg cut for " + clip.title + "\nFile: " + (file ? file.name : "input.mp4") +
+        "\nStart: " + clip.start.toFixed(3) + "s (" + clip.startFormatted + ")\nDuration: " + clip.duration + "s\n\n" +
+        "ffmpeg -ss " + clip.start.toFixed(3) + " -t " + clip.duration +
+        ' -i "' + (file ? file.name : "input.mp4") + '" -c copy -avoid_negative_ts make_zero clip_' + (clip.id + 1) + ".mp4\n";
+      var b = new Blob([txt], { type: "text/plain;charset=utf-8" });
+      var u = URL.createObjectURL(b);
+      triggerDownload(u, "clip_" + (clip.id + 1) + "_cut.txt");
+      setTimeout(function () { URL.revokeObjectURL(u); }, 1000);
+      return;
+    }
+    // Never download the full original file
+    function doDl(c) {
+      var name = "zlatyn_clip_" + (c.id + 1) + "_" + c.startFormatted.replace(":", "-") + ".webm";
+      triggerDownload(c.realBlobUrl, name);
+      setStatus("Downloaded clip #" + (c.id + 1) + " (" + Math.round(c.duration) + "s)");
+    }
+    if (clip.realBlobUrl) {
+      doDl(clip);
+      return;
+    }
+    // Blob was freed for memory (mobile) or not cut yet — cut this one now
+    if (cutting) { setStatus("Busy cutting another clip — wait…"); return; }
+    cutting = true;
+    setStatus("Cutting clip #" + (clip.id + 1) + " for download…", true);
+    renderClip(url, clip.start, clip.duration).then(function (real) {
+      cutting = false;
+      if (!real) { setStatus("Cut failed — try FFmpeg .txt"); return; }
+      clip.realBlobUrl = real;
+      clip.blobUrl = real;
+      clip.isReal = true;
+      clip._released = false;
+      renderResults();
+      doDl(clip);
+    });
+  }
+
+  $("exportBtn").addEventListener("click", function () {
+    if (!clips.length || generating || cutting) return;
+    generating = true;
+    $("exportBtn").disabled = true;
+    $("generateBtn").disabled = true;
+    setStatus("Cutting all clips to short files…", true);
+    setProgress(2);
+
+    var cmds = clips.map(function (c) {
+      return "ffmpeg -ss " + c.start.toFixed(3) + " -t " + c.duration + ' -i "' + (file ? file.name : "input.mp4") +
+        '" -c copy clip_' + (c.id + 1) + ".mp4";
+    }).join("\n");
+    var b = new Blob(["# Zlatyn Clip Studio - all cuts\n# " + clips.length + " clips - source " + (file ? file.name : "") + "\n\n" + cmds + "\n"], { type: "text/plain;charset=utf-8" });
+    var txtUrl = URL.createObjectURL(b);
+    triggerDownload(txtUrl, "zlatyn_all_cuts.txt");
+    setTimeout(function () { URL.revokeObjectURL(txtUrl); }, 1500);
+
+    var ready = clips.filter(function (c) { return c.isReal && c.realBlobUrl; });
+    if (!ready.length) {
+      setStatus("No ready clips yet — wait for Generate to finish cutting");
+      generating = false;
+      $("exportBtn").disabled = false;
+      $("generateBtn").disabled = false;
+      return;
+    }
+    var i = 0;
+    function next() {
+      if (i >= ready.length) {
+        setProgress(100);
+        setStatus("Downloaded " + ready.length + " short clips");
+        generating = false;
+        $("exportBtn").disabled = false;
+        $("generateBtn").disabled = false;
+        setTimeout(function () { setProgress(0); }, 2000);
+        return;
+      }
+      setProgress(5 + Math.round((i / ready.length) * 90));
+      setStatus("Downloading " + (i + 1) + "/" + ready.length + "…", true);
+      var c = ready[i];
+      var name = "zlatyn_clip_" + (c.id + 1) + "_" + c.startFormatted.replace(":", "-") + ".webm";
+      triggerDownload(c.realBlobUrl, name);
+      i++;
+      setTimeout(next, 700);
+    }
+    next();
+  });
+
+  if (isMobile) {
+    var cc = $("clipCount"); var cn = $("clipCountNum");
+    if (cc) { cc.max = 20; cc.value = 5; }
+    if (cn) { cn.max = 20; cn.value = 5; }
+    var cv = $("clipCountVal"); if (cv) cv.textContent = "5";
+    clipCount = 5;
+    setStatus("Mobile safe mode on");
+  } else {
+    setStatus("Idle");
+  }
+  updateGenLabel();
+})();
+</script>
+
+</body>
+</html>
