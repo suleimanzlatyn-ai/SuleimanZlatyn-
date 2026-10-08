@@ -1055,7 +1055,8 @@
 
   async function processBackendClip(sourceRef,clip,index,total,caption){
     var controller=new AbortController();
-    var timer=setTimeout(function(){controller.abort();},300000);
+    var timer=setTimeout(function(){controller.abort();},30000);
+    var jobId="";
     try {
       var response=await fetch("/api/process",{
         method:"POST",
@@ -1071,17 +1072,29 @@
       });
       var data={};
       try{data=await response.json();}catch(e){}
-      if(!response.ok || !data.ok) throw new Error(data.error||("Server failed to render clip "+(index+1)+" ("+response.status+")."));
-      if(!data.url) throw new Error("Server completed clip "+(index+1)+" but returned no download URL.");
-      return data;
+      if(!response.ok || !data.ok || !data.jobId) throw new Error(data.error||("Could not start clip "+(index+1)+" ("+response.status+")."));
+      jobId=data.jobId;
     } catch(e) {
-      if(e && e.name==="AbortError") throw new Error("Clip "+(index+1)+" timed out after 5 minutes. Try a shorter or smaller video.");
+      if(e && e.name==="AbortError") throw new Error("The server did not start clip "+(index+1)+" in time. Reload and try again.");
       throw e;
     } finally { clearTimeout(timer); }
+
+    var started=Date.now();
+    while(Date.now()-started<300000) {
+      await new Promise(function(resolve){setTimeout(resolve,2000);});
+      var statusResponse=await fetch("/api/jobs/"+encodeURIComponent(jobId),{cache:"no-store"});
+      var statusData={};
+      try{statusData=await statusResponse.json();}catch(e){}
+      if(!statusResponse.ok || !statusData.ok) throw new Error(statusData.error||"Lost connection to the rendering job.");
+      if(statusData.status==="done" && statusData.url) return statusData;
+      if(statusData.status==="failed") throw new Error(statusData.error||("FFmpeg failed on clip "+(index+1)+"; try a shorter source or clip length."));
+      setStatus("Rendering clip "+(index+1)+"/"+total+" on server…",true);
+    }
+    throw new Error("Clip "+(index+1)+" took longer than 5 minutes. Try a shorter clip length or smaller source video.");
   }
 
   async function runBackendClips(sourceRef,total,caption){
-    var next=0, completed=0, failed=0, concurrency=2;
+    var next=0, completed=0, failed=0, concurrency=1;
     async function worker(){
       while(true){
         var index=next++;
