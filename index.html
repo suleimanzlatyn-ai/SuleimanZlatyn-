@@ -55,7 +55,7 @@
     <div style="position:relative;max-width:1240px;margin:0 auto;padding:56px 20px">
       <div style="display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:999px;background:#0F172A;border:1px solid #1E293B;font-size:11px;color:#cbd5e1">
         <span style="width:8px;height:8px;border-radius:50%;background:#22D3EE;box-shadow:0 0 10px #22D3EE;animation:pulseGlow 2s infinite"></span>
-        FIXED • Real energy peaks • Client-side FFmpeg • 9:16 output
+        REAL MP4 EXPORT • FFmpeg • 9:16 output
       </div>
       <h1 style="margin-top:20px;font-weight:800;line-height:.95;letter-spacing:-.025em;font-size:clamp(36px,6vw,64px)">
         <span style="display:block">One Video.</span>
@@ -171,9 +171,9 @@
           </div>
 
           <div style="margin-top:24px">
-            <label style="font-size:12px;font-weight:500;color:#cbd5e1">Caption / hook text</label>
-            <input id="captionText" type="text" maxlength="160" placeholder="Enter a hook or caption to burn into every clip" style="margin-top:8px;width:100%;height:40px;border-radius:999px;background:#020617;border:1px solid #1E293B;padding:0 16px;font-size:13px;outline:none;color:#fff">
-            <div class="muted" style="margin-top:5px;font-size:10px">White bold text with black outline • top hook + bottom safe-zone caption</div>
+            <label style="font-size:12px;font-weight:500;color:#cbd5e1">Optional caption / hook text</label>
+            <input id="captionText" type="text" maxlength="160" placeholder="Optional — leave blank for clean clips" style="margin-top:8px;width:100%;height:40px;border-radius:999px;background:#020617;border:1px solid #1E293B;padding:0 16px;font-size:13px;outline:none;color:#fff">
+            <div class="muted" style="margin-top:5px;font-size:10px">No text is added when this field is empty.</div>
           </div>
 
           <div style="margin-top:24px;border-radius:14px;background:#020617;border:1px solid #1E293B;padding:12px">
@@ -831,7 +831,7 @@
 
       engine.FS("writeFile", inputName, await window.FFmpeg.fetchFile(sourceFile));
 
-      var vf = "crop=ih*9/16:ih:(iw-ow)/2:0,scale=1080:1920,unsharp=5:5:0.8:3:3:0.4";
+      var vf = "crop=if(gte(iw/ih\\,9/16)\\,ih*9/16\\,iw):if(gte(iw/ih\\,9/16)\\,ih\\,iw*16/9):(iw-ow)/2:(ih-oh)/2,scale=1080:1920,unsharp=5:5:0.8:3:3:0.4";
       var cf = "";
       if (String(caption || "").trim()) {
         var fontReady = await ensureCaptionFont(engine, caption);
@@ -1017,66 +1017,6 @@
 
   var backendState = null;
   var backendClientPromise = null;
-  // Zlatyn native backend: direct large-file upload to a persistent Vercel Sandbox.
-  // This bypasses browser FFmpeg and does not require Vercel Blob.
-  var ZLATYN_SANDBOX_BASE = "";
-  var ZLATYN_SANDBOX_KEY = "zlatyn-backend-2026-10-08-7f4c9b2d";
-  async function ensureNativeBackend(){
-    var response=await fetch("/api/native-backend",{cache:"no-store"});
-    var data=await response.json();
-    if(!response.ok||!data.ok||!data.url) throw new Error(data.error||"Native backend could not start");
-    ZLATYN_SANDBOX_BASE=data.url;
-    return data.url;
-  }
-
-
-  async function uploadToZlatynBackend(sourceFile){
-    var chunkSize = 8 * 1024 * 1024;
-    var total = Math.ceil(sourceFile.size / chunkSize);
-    for(var i=0;i<total;i++){
-      var start=i*chunkSize, end=Math.min(sourceFile.size,start+chunkSize), ok=false, lastError=null;
-      for(var attempt=1;attempt<=3 && !ok;attempt++){
-        try{
-          var response=await fetch(ZLATYN_SANDBOX_BASE+"/upload?chunk="+i+"&total="+total+"&size="+chunkSize,{method:"PUT",headers:{"x-zlatyn-key":ZLATYN_SANDBOX_KEY,"Content-Type":sourceFile.type||"application/octet-stream"},body:sourceFile.slice(start,end)});
-          if(!response.ok) throw new Error("Backend upload "+response.status);
-          ok=true;
-        }catch(e){lastError=e;await new Promise(function(r){setTimeout(r,700*attempt);});}
-      }
-      if(!ok) throw lastError||new Error("Backend upload failed");
-      setProgress(5+Math.round(((i+1)/total)*10));
-      setStatus("Uploading to native backend • "+Math.round(((i+1)/total)*100)+"%",true);
-    }
-  }
-
-  async function runZlatynBackend(total,caption){
-    await ensureNativeBackend();
-    await uploadToZlatynBackend(file);
-    var payload={caption:caption||"",clips:clips.map(function(c){return {start:c.start,duration:c.duration,score:c.score,title:c.title};})};
-    var response=await fetch(ZLATYN_SANDBOX_BASE+"/generate",{method:"POST",headers:{"Content-Type":"application/json","x-zlatyn-key":ZLATYN_SANDBOX_KEY},body:JSON.stringify(payload)});
-    var data=await response.json();
-    if(!response.ok||!data.ok) throw new Error(data.error||"Native backend could not start");
-    var finished=false,started=Date.now(),timeout=44*60*1000;
-    while(!finished){
-      if(Date.now()-started>timeout) throw new Error("Native backend timed out");
-      await new Promise(function(r){setTimeout(r,900);});
-      var s=await fetch(ZLATYN_SANDBOX_BASE+"/status/"+encodeURIComponent(data.jobId),{headers:{"x-zlatyn-key":ZLATYN_SANDBOX_KEY},cache:"no-store"});
-      var status=await s.json();
-      if(!s.ok||!status.ok) throw new Error(status.error||"Backend status failed");
-      var current=Number(status.current)||0;
-      setProgress(15+Math.round((current/Math.max(1,total))*80));
-      setStatus(status.message||("Native FFmpeg • "+current+"/"+total),true);
-      (status.outputs||[]).forEach(function(out){
-        var c=clips[out.index];
-        if(c){c.realBlobUrl=ZLATYN_SANDBOX_BASE+out.url+"?key="+encodeURIComponent(ZLATYN_SANDBOX_KEY);c.blobUrl=c.realBlobUrl;c.downloadUrl=c.realBlobUrl;c.isReal=true;}
-      });
-      renderResults();
-      finished=status.status==="done"||status.status==="error";
-      if(status.status==="error") throw new Error(status.message||"Native backend failed");
-    }
-    var failedCount=clips.filter(function(c){return !c.isReal;}).length;
-    return {failed:failedCount};
-  }
-
 
   async function getBackendState(){
     if(backendState) return backendState;
