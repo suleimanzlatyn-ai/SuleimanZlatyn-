@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/process.js": {
+      "maxDuration": 300
+    },
+    "api/upload.js": {
+      "maxDuration": 60
+    },
+    "api/file.js": {
+      "maxDuration": 60
+    },
+    "api/health.js": {
+      "maxDuration": 10
+    }
+  },
+  "fluid": true,
+  "regions": [
+    "cpt1"
+  ]
+}
