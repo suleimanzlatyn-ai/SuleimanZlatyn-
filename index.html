@@ -351,21 +351,49 @@
       // 5 anti-dead-air / anti-outro quality
       var local = Math.max(audio[k], visual[k], speech[k]);
       var position = dur > 0 ? s.t / dur : 0;
-      var positionScore = position < 0.03 ? 0.72 :
+
+      // A good short-form candidate is not merely "loud". It should behave like
+      // a miniature story: immediate reason to stay -> development -> payoff.
+      var futurePeak = 0;
+      var futureEnergy = 0;
+      var futureCount = 0;
+      var arcWindow = Math.min(Math.max(8, len * 0.55), 18);
+      for (var ak = k + 1; ak < samples.length && samples[ak].t <= s.t + arcWindow; ak++) {
+        var fe = 0.62 * audio[ak] + 0.22 * visual[ak] + 0.16 * speech[ak];
+        futurePeak = Math.max(futurePeak, fe);
+        futureEnergy += fe;
+        futureCount++;
+      }
+      var arc = futureCount ? clamp01(futurePeak * 0.65 + (futureEnergy / futureCount) * 0.35) : 0;
+
+      // Strong hooks are usually early enough to explain why the viewer should care,
+      // but we also search the entire source because later "spikes" can contain the
+      // strongest story/reaction/payoff. We don't blindly favor the first seconds.
+      var positionScore = position < 0.03 ? 0.82 :
                           position < 0.35 ? 1.00 :
-                          position < 0.82 ? 0.93 :
+                          position < 0.82 ? 0.94 :
                           position < 0.94 ? 0.70 : 0.35;
+
       var deadAirPenalty = (audio[k] < 0.12 && speech[k] < 0.10 && visual[k] < 0.10) ? 0.35 : 0;
       var outroPenalty = position > 0.93 ? 0.30 : 0;
 
+      // Hook archetypes the selector favors:
+      // QUESTION/OPEN LOOP: sudden onset + speech + continuation
+      // SHOCK/CLAIM: sudden onset + high energy + visual change
+      // STORY/REVELATION: speech + sustained energy + later payoff
+      // REACTION/COMEDY: visual change + audio spike + later continuation
+      // HOW-TO/VALUE: speech + sustained energy + clear development
+      // CONFLICT/OPINION: onset + speech + strong continuation
       var raw =
-        25 * clamp01(onset[k] * 0.72 + delta * 0.28) +
-        20 * clamp01(audio[k] * 0.55 + speech[k] * 0.45) +
-        15 * visual[k] +
-        15 * sustain[k] +
-        10 * local +
-        10 * positionScore +
-        5 * clamp01(1 - deadAirPenalty - outroPenalty);
+        22 * clamp01(onset[k] * 0.72 + delta * 0.28) +
+        18 * clamp01(audio[k] * 0.50 + speech[k] * 0.50) +
+        12 * visual[k] +
+        13 * sustain[k] +
+        10 * arc +
+        8 * local +
+        7 * positionScore +
+        5 * clamp01(1 - deadAirPenalty - outroPenalty) +
+        5 * clamp01(speech[k] * 0.65 + onset[k] * 0.35);
 
       var score = Math.round(Math.max(0, Math.min(100, raw)));
       if (score < MIN_HOOK_SCORE) continue;
@@ -738,7 +766,7 @@
     $("fileMeta").textContent = fmtSize(file.size) + " • " + fmtTime(duration);
     $("generateBtn").disabled = false;
     analyzing = true;
-    setStatus("Analyzing energy (audio + motion)…", true);
+    setStatus("Teaching the editor the video • hooks + story arcs + energy…", true);
     analyzePeaks(url, duration, clipLen, clipCount * 4, function (p) { setProgress(p); })
       .then(function (list) {
         peaks = list; analyzing = false; setProgress(0);
@@ -746,9 +774,9 @@
         updateMeta(); drawWave();
       })
       .catch(function () {
-        peaks = fallbackPeaks(duration, clipLen, clipCount * 3);
+        peaks = [];
         analyzing = false; setProgress(0);
-        setStatus("Ready • evenly spaced cuts (analysis weak)");
+        setStatus("Analysis could not find reliable 30+ hooks — no weak cuts added.");
         updateMeta(); drawWave();
       });
   });
@@ -862,6 +890,31 @@
     }
 
     chosen.sort(function(a,b){ return a.start-b.start; });
+
+    // Build the result objects only from qualified candidates.
+    // The editor's creative policy is deliberately conservative:
+    // 1) no score < 30;
+    // 2) no duplicate/near-duplicate moments;
+    // 3) prefer a little context before the hook;
+    // 4) preserve enough time after the hook for a payoff;
+    // 5) quality beats filling the requested count.
+    clips=chosen.map(function(item,idx){
+      var start=Math.max(0,Math.min(item.start,Math.max(0,duration-1)));
+      var d=Math.min(clipLen,Math.max(1,duration-start));
+      var score=Math.max(MIN_HOOK_SCORE,Math.min(100,Number(item.score)||0));
+      return {
+        id:idx,
+        start:start,
+        duration:d,
+        score:score,
+        title:"Clip #"+(idx+1)+" • "+(score>=80?"Exceptional hook":score>=65?"Strong hook":score>=50?"Good hook":"Qualified hook"),
+        blobUrl:url+"#t="+start.toFixed(2)+","+(start+d).toFixed(2),
+        downloadUrl:url,
+        startFormatted:fmtTime(start),
+        realBlobUrl:null,
+        isReal:false
+      };
+    });
 
     renderResults();
     drawTimeline();
