@@ -27,6 +27,7 @@
     .muted{color:#94a3b8}
     .cyan{color:#22D3EE}
   </style>
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 </head>
 <body>
 <div id="app">
@@ -54,7 +55,7 @@
     <div style="position:relative;max-width:1240px;margin:0 auto;padding:56px 20px">
       <div style="display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:999px;background:#0F172A;border:1px solid #1E293B;font-size:11px;color:#cbd5e1">
         <span style="width:8px;height:8px;border-radius:50%;background:#22D3EE;box-shadow:0 0 10px #22D3EE;animation:pulseGlow 2s infinite"></span>
-        FIXED • Real energy peaks • Zero external scripts • Always loads
+        FIXED • Real energy peaks • Client-side FFmpeg • 9:16 output
       </div>
       <h1 style="margin-top:20px;font-weight:800;line-height:.95;letter-spacing:-.025em;font-size:clamp(36px,6vw,64px)">
         <span style="display:block">One Video.</span>
@@ -75,7 +76,7 @@
       <h2 style="font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px">
         <span style="width:28px;height:28px;border-radius:8px;background:#0F172A;border:1px solid #1E293B;display:grid;place-items:center">&#9999;</span>
         Studio
-        <span class="pill muted" style="padding:2px 8px;font-size:11px">PURE JS ENGINE</span>
+        <span class="pill muted" style="padding:2px 8px;font-size:11px">FFMPEG ENGINE</span>
       </h2>
       <div style="font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:8px">
         <span id="statusPill" class="pill" style="padding:4px 10px">Idle</span>
@@ -161,22 +162,28 @@
           </div>
 
           <div style="margin-top:24px">
-            <label style="font-size:12px;font-weight:500;color:#cbd5e1">Aspect ratio (real renders)</label>
+            <label style="font-size:12px;font-weight:500;color:#cbd5e1">Aspect ratio (fixed 9:16 output)</label>
             <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px" id="aspectBtns">
               <button data-aspect="9:16" class="aspect-btn" style="height:40px;border-radius:999px;border:none;font-size:12px;font-weight:700;background:linear-gradient(90deg,#2563EB,#06B6D4);color:#fff;box-shadow:0 6px 20px rgba(37,99,235,.35)">9:16</button>
-              <button data-aspect="16:9" class="aspect-btn pill" style="height:40px;font-size:12px;font-weight:700;color:#cbd5e1">16:9</button>
-              <button data-aspect="1:1" class="aspect-btn pill" style="height:40px;font-size:12px;font-weight:700;color:#cbd5e1">1:1</button>
+              <button data-aspect="16:9" class="aspect-btn pill" disabled style="display:none" style="height:40px;font-size:12px;font-weight:700;color:#cbd5e1">16:9</button>
+              <button data-aspect="1:1" class="aspect-btn pill" disabled style="display:none" style="height:40px;font-size:12px;font-weight:700;color:#cbd5e1">1:1</button>
             </div>
+          </div>
+
+          <div style="margin-top:24px">
+            <label style="font-size:12px;font-weight:500;color:#cbd5e1">Caption / hook text</label>
+            <input id="captionText" type="text" maxlength="160" placeholder="Enter a hook or caption to burn into every clip" style="margin-top:8px;width:100%;height:40px;border-radius:999px;background:#020617;border:1px solid #1E293B;padding:0 16px;font-size:13px;outline:none;color:#fff">
+            <div class="muted" style="margin-top:5px;font-size:10px">White bold text with black outline • top hook + bottom safe-zone caption</div>
           </div>
 
           <div style="margin-top:24px;border-radius:14px;background:#020617;border:1px solid #1E293B;padding:12px">
             <div style="font-size:11px;font-weight:700;letter-spacing:.025em;color:#cbd5e1">WHAT THIS VERSION FIXES</div>
             <ul style="margin-top:8px;padding-left:16px;font-size:11px;color:#94a3b8;line-height:1.6">
-              <li>No React / no CDN — pure vanilla JS, always loads</li>
+              <li>Client-side FFmpeg encoding with sequential processing</li>
               <li>Peaks via video + AnalyserNode seek sampling (works on MP4)</li>
-              <li>Never loads whole file into one ArrayBuffer</li>
-              <li>MediaRecorder mime fallback (vp9 → vp8 → webm)</li>
-              <li>FFmpeg command export for perfect quality cuts</li>
+              <li>FFmpeg input/output files are unlinked after every clip</li>
+              <li>1080×1920 MP4 output with libx264 ultrafast encoding</li>
+              <li>Unsharp + loudnorm + burned hook/caption text</li>
             </ul>
           </div>
 
@@ -200,7 +207,7 @@
     <div style="margin-top:32px">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <h3 style="font-weight:700;font-size:14px;letter-spacing:.025em">RESULTS • <span id="resultsCount">0</span> clips</h3>
-        <span class="muted" style="font-size:11px">All clips pre-cut on Generate • Download = short file only</span>
+        <span class="muted" style="font-size:11px">FFmpeg • 1080×1920 • 9:16 • sequential processing</span>
       </div>
       <div id="resultsGrid" style="margin-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">
         <div class="card" style="padding:32px;text-align:center;grid-column:1/-1">
@@ -213,8 +220,8 @@
   </section>
 
   <footer style="max-width:1240px;margin:24px auto 0;padding:40px 20px;border-top:1px solid #1E293B;font-size:11px;color:#64748b;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between">
-    <span>Zlatyn Clip Studio V3 LITE+ • Pure vanilla JS • AnalyserNode peaks • Media Fragments + optional MediaRecorder</span>
-    <span class="pill" style="padding:4px 8px">No external scripts</span>
+    <span>Zlatyn Clip Studio V3 LITE+ • AnalyserNode peaks • Client-side FFmpeg • 1080×1920 MP4</span>
+    <span class="pill" style="padding:4px 8px">Client-side processing</span>
   </footer>
 </div>
 
@@ -457,189 +464,107 @@
     });
   }
 
-  // ---- Reliable clip cut using video.captureStream() ----
-  function pickMime() {
-    if (typeof MediaRecorder === "undefined") return "";
-    var cands = [
-      "video/webm;codecs=vp9,opus",
-      "video/webm;codecs=vp8,opus",
-      "video/webm;codecs=vp9",
-      "video/webm;codecs=vp8",
-      "video/webm"
-    ];
-    for (var i = 0; i < cands.length; i++) {
-      if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(cands[i])) return cands[i];
+  // ---- Client-side FFmpeg clip renderer ----
+  var ffmpegInstance = null;
+  var ffmpegLoadPromise = null;
+
+  function getFFmpegEngine() {
+    if (ffmpegInstance) return ffmpegInstance;
+    if (!window.FFmpeg || typeof window.FFmpeg.createFFmpeg !== "function") {
+      throw new Error("FFmpeg.wasm is unavailable.");
     }
-    return "";
+    ffmpegInstance = window.FFmpeg.createFFmpeg({
+      log: false,
+      corePath: "https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js"
+    });
+    ffmpegInstance.setProgress(function (p) {
+      if (!generating || !Number.isFinite(p.ratio)) return;
+      var idx = Number(ffmpegInstance._ndlClipIndex || 0);
+      var total = Number(ffmpegInstance._ndlClipTotal || 1);
+      setProgress(Math.min(99, 15 + ((idx + Math.max(0, Math.min(1, p.ratio))) / total) * 80));
+    });
+    return ffmpegInstance;
   }
 
-  function waitSeek(video, time) {
-    return new Promise(function (resolve) {
-      var done = false;
-      var finish = function () {
-        if (done) return;
-        done = true;
-        video.removeEventListener("seeked", finish);
-        resolve();
-      };
-      video.addEventListener("seeked", finish);
-      try {
-        video.currentTime = Math.max(0, time);
-      } catch (e) {
-        finish();
-        return;
-      }
-      // if already there
-      if (Math.abs(video.currentTime - time) < 0.12) finish();
-      setTimeout(finish, 3000);
-    });
+  async function loadFFmpegEngine() {
+    var engine = getFFmpegEngine();
+    if (engine.isLoaded()) return engine;
+    if (!ffmpegLoadPromise) {
+      ffmpegLoadPromise = engine.load().catch(function (e) {
+        ffmpegLoadPromise = null;
+        throw e;
+      });
+    }
+    await ffmpegLoadPromise;
+    return engine;
   }
 
-  function renderClip(blobUrl, start, dur) {
-    return new Promise(function (resolve) {
-      var mime = pickMime();
-      if (!mime || typeof MediaRecorder === "undefined") {
-        resolve(null);
-        return;
-      }
+  function ffmpegText(value) {
+    return String(value || "")
+      .replace(/\\/g, "\\\\")
+      .replace(/:/g, "\\:")
+      .replace(/'/g, "\\'")
+      .replace(/%/g, "\\%")
+      .replace(/,/g, "\\,")
+      .replace(/\[/g, "\\[")
+      .replace(/\]/g, "\\]");
+  }
 
-      var video = document.createElement("video");
-      video.src = blobUrl;
-      video.muted = false;
-      video.playsInline = true;
-      video.preload = "auto";
-      video.crossOrigin = "anonymous";
-      // keep element off-DOM but some browsers need it in document for captureStream
-      video.style.cssText = "position:fixed;left:-9999px;width:320px;height:180px;opacity:0;pointer-events:none";
-      document.body.appendChild(video);
+  function captionFilter(text) {
+    var safe = ffmpegText(text);
+    if (!safe) return "";
+    var font = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf";
+    var top = "drawtext=fontfile=" + font + ":text='" + safe + "':fontcolor=white:fontsize=80:fontweight=bold:borderw=5:bordercolor=black:shadowx=2:shadowy=2:x=(w-text_w)/2:y=120";
+    var bottom = "drawtext=fontfile=" + font + ":text='" + safe + "':fontcolor=white:fontsize=80:fontweight=bold:borderw=5:bordercolor=black:shadowx=2:shadowy=2:x=(w-text_w)/2:y=1620";
+    return top + "," + bottom;
+  }
 
-      var killTimer = setTimeout(function () {
-        cleanup();
-        resolve(null);
-      }, Math.min(45000, dur * 1000 + 15000));
+  async function renderClipFFmpeg(sourceFile, start, dur, clipIndex, totalClips, caption) {
+    var engine = await loadFFmpegEngine();
+    var inputName = "ndl_source_" + Date.now() + "_" + clipIndex + ".mp4";
+    var outputName = "ndl_output_" + Date.now() + "_" + clipIndex + ".mp4";
 
-      var rec = null;
-      var chunks = [];
+    try {
+      engine._ndlClipIndex = clipIndex;
+      engine._ndlClipTotal = totalClips;
 
-      function cleanup() {
-        clearTimeout(killTimer);
-        try { if (rec && rec.state !== "inactive") rec.stop(); } catch (e) {}
-        try { video.pause(); } catch (e) {}
-        try { document.body.removeChild(video); } catch (e) {}
-      }
+      engine.FS("writeFile", inputName, await window.FFmpeg.fetchFile(sourceFile));
 
-      video.addEventListener("error", function () {
-        cleanup();
-        resolve(null);
-      });
+      var vf = "crop=ih*9/16:ih:(iw-ow)/2:0,scale=1080:1920,unsharp=5:5:0.8:3:3:0.4";
+      var cf = captionFilter(caption);
+      if (cf) vf += "," + cf;
 
-      video.addEventListener("loadedmetadata", function () {
-        var end = Math.min(start + dur, video.duration || start + dur);
-        var actualDur = Math.max(0.5, end - start);
+      await engine.run(
+        "-ss", String(Math.max(0, start)),
+        "-i", inputName,
+        "-t", String(Math.max(0.5, dur)),
+        "-vf", vf,
+        "-af", "loudnorm",
+        "-c:v", "libx264",
+        "-crf", "23",
+        "-preset", "ultrafast",
+        "-c:a", "aac",
+        "-movflags", "+faststart",
+        "-avoid_negative_ts", "make_zero",
+        outputName
+      );
 
-        waitSeek(video, start).then(function () {
-          // Adaptive quality: light on mobile to prevent Aw, Snap! OOM
-          var canvas = document.createElement("canvas");
-          var isV = aspect === "9:16";
-          var isS = aspect === "1:1";
-          var mob = isMobile;
-          // Mobile: 360p-ish; Desktop: 720p
-          if (mob) {
-            canvas.width = isV ? 360 : isS ? 360 : 640;
-            canvas.height = isV ? 640 : isS ? 360 : 360;
-          } else {
-            canvas.width = isV ? 720 : isS ? 720 : 1280;
-            canvas.height = isV ? 1280 : isS ? 720 : 720;
-          }
-          var c2d = canvas.getContext("2d", { alpha: false });
-          c2d.imageSmoothingEnabled = true;
-          c2d.imageSmoothingQuality = mob ? "medium" : "high";
-          var stream = canvas.captureStream(mob ? 15 : 30);
-          var drawing = true;
-          (function draw() {
-            if (!drawing) return;
-            try {
-              if (video.readyState >= 2 && video.videoWidth) {
-                var vw = video.videoWidth, vh = video.videoHeight;
-                var cw = canvas.width, ch = canvas.height;
-                var vr = vw / vh, cr = cw / ch;
-                var sx = 0, sy = 0, sw = vw, sh = vh;
-                if (vr > cr) { sw = vh * cr; sx = (vw - sw) / 2; }
-                else { sh = vw / cr; sy = (vh - sh) / 2; }
-                c2d.fillStyle = "#000";
-                c2d.fillRect(0, 0, cw, ch);
-                c2d.drawImage(video, sx, sy, sw, sh, 0, 0, cw, ch);
-              }
-            } catch (e) {}
-            requestAnimationFrame(draw);
-          })();
-          setTimeout(function () { drawing = false; }, actualDur * 1000 + 400);
-          try {
-            var ACc = window.AudioContext || window.webkitAudioContext;
-            if (ACc) {
-              var actx = new ACc();
-              var asrc = actx.createMediaElementSource(video);
-              var dest = actx.createMediaStreamDestination();
-              asrc.connect(dest);
-              dest.stream.getAudioTracks().forEach(function (t) { stream.addTrack(t); });
-            }
-          } catch (e) {}
+      var data = engine.FS("readFile", outputName);
+      if (!data || !data.length) throw new Error("FFmpeg returned an empty clip.");
 
-          try {
-            rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: isMobile ? 800000 : 4000000, audioBitsPerSecond: isMobile ? 64000 : 128000 });
-          } catch (e) {
-            try { rec = new MediaRecorder(stream); } catch (e2) {
-              cleanup();
-              resolve(null);
-              return;
-            }
-          }
+      var blob = new Blob([data.buffer], {type:"video/mp4"});
+      var objectUrl = URL.createObjectURL(blob);
 
-          rec.ondataavailable = function (e) {
-            if (e.data && e.data.size > 0) chunks.push(e.data);
-          };
+      try { engine.FS("unlink", outputName); } catch(e) {}
+      try { engine.FS("unlink", inputName); } catch(e) {}
 
-          rec.onstop = function () {
-            cleanup();
-            if (!chunks.length) {
-              resolve(null);
-              return;
-            }
-            var blob = new Blob(chunks, { type: mime.split(";")[0] || "video/webm" });
-            // Reject if suspiciously large (likely whole file) or tiny (failed)
-            var expectedMin = actualDur * 5000; // ~5KB/s very low bound
-            var expectedMax = actualDur * 2000000; // 2MB/s high bound
-            if (blob.size < 2000) {
-              resolve(null);
-              return;
-            }
-            // If somehow we got almost the full original file size, reject
-            if (file && blob.size > file.size * 0.85 && actualDur < duration * 0.5) {
-              resolve(null);
-              return;
-            }
-            resolve(URL.createObjectURL(blob));
-          };
-
-          rec.start(200);
-          video.play().then(function () {
-            setTimeout(function () {
-              try { video.pause(); } catch (e) {}
-              try {
-                if (rec && rec.state !== "inactive") rec.stop();
-              } catch (e) {}
-            }, actualDur * 1000 + 250);
-          }).catch(function () {
-            // play failed — still try timed stop
-            setTimeout(function () {
-              try {
-                if (rec && rec.state !== "inactive") rec.stop();
-              } catch (e) {}
-            }, actualDur * 1000 + 250);
-          });
-        });
-      });
-    });
+      return objectUrl;
+    } catch(e) {
+      try { engine.FS("unlink", outputName); } catch(x) {}
+      try { engine.FS("unlink", inputName); } catch(x) {}
+      console.error("FFmpeg clip error:", e);
+      return null;
+    }
   }
 
   function drawWave() {
@@ -787,102 +712,96 @@
     b.addEventListener("click", function () { setAspect(b.getAttribute("data-aspect")); });
   });
 
-  $("generateBtn").addEventListener("click", function () {
+  $("generateBtn").addEventListener("click", async function () {
     if (!file || !url || duration === 0 || generating || analyzing) return;
-    generating = true; $("generateBtn").disabled = true;
-    setProgress(5); setStatus("Selecting best moments…", true);
+
+    generating = true;
+    $("generateBtn").disabled = true;
+    $("exportBtn").disabled = true;
+    setProgress(5);
+    setStatus("Selecting the strongest moments…", true);
 
     var candidates = peaks.length ? peaks.slice() : fallbackPeaks(duration, clipLen, clipCount * 2);
-    candidates.sort(function (a, b) { return b.score - a.score; });
-    var chosen = [];
-    for (var i = 0; i < candidates.length; i++) {
-      var c = candidates[i];
-      if (chosen.length >= clipCount) break;
-      if (c.start > duration - Math.min(clipLen, duration) - 0.3) continue;
-      var ok = true;
-      for (var j = 0; j < chosen.length; j++) {
-        if (Math.abs(chosen[j].start - c.start) < clipLen * 0.7) { ok = false; break; }
-      }
-      if (ok) chosen.push(c);
-    }
-    // fill evenly if not enough
-    if (chosen.length < clipCount) {
-      var need = clipCount - chosen.length;
-      var span = Math.max(0.5, duration - clipLen);
-      for (var fi = 0; fi < clipCount && chosen.length < clipCount; fi++) {
-        var s = clipCount === 1 ? 0 : (fi / (clipCount - 1)) * span;
-        var ok2 = true;
-        for (var k = 0; k < chosen.length; k++) {
-          if (Math.abs(chosen[k].start - s) < clipLen * 0.5) { ok2 = false; break; }
-        }
-        if (ok2) chosen.push({ start: s, score: 0.45 });
-      }
-    }
-    chosen.sort(function (a, b) { return a.start - b.start; });
+    candidates.sort(function(a,b){return b.score-a.score;});
 
-    clips = chosen.map(function (c, idx) {
-      var start = Math.max(0, Math.min(c.start, Math.max(0, duration - 1)));
-      var d = Math.min(clipLen, Math.max(1, duration - start));
+    var chosen=[];
+    for(var i=0;i<candidates.length && chosen.length<clipCount;i++){
+      var candidate=candidates[i];
+      if(candidate.start>duration-Math.min(clipLen,duration)-0.3) continue;
+      var separated=true;
+      for(var j=0;j<chosen.length;j++){
+        if(Math.abs(chosen[j].start-candidate.start)<clipLen*0.7){separated=false;break;}
+      }
+      if(separated) chosen.push(candidate);
+    }
+
+    if(chosen.length<clipCount){
+      var span=Math.max(0.5,duration-clipLen);
+      for(var fi=0;fi<clipCount && chosen.length<clipCount;fi++){
+        var fallbackStart=clipCount===1?0:(fi/(clipCount-1))*span;
+        var ok=true;
+        for(var fk=0;fk<chosen.length;fk++){
+          if(Math.abs(chosen[fk].start-fallbackStart)<clipLen*0.5){ok=false;break;}
+        }
+        if(ok) chosen.push({start:fallbackStart,score:0.45});
+      }
+    }
+
+    chosen.sort(function(a,b){return a.start-b.start;});
+
+    clips=chosen.map(function(item,idx){
+      var start=Math.max(0,Math.min(item.start,Math.max(0,duration-1)));
+      var d=Math.min(clipLen,Math.max(1,duration-start));
       return {
-        id: idx, start: start, duration: d, score: c.score,
-        title: "Clip #" + (idx + 1) + " • " + (c.score > 0.75 ? "High energy" : c.score > 0.5 ? "Good hook" : "Moment"),
-        blobUrl: url + "#t=" + start.toFixed(2) + "," + (start + d).toFixed(2),
-        downloadUrl: url, startFormatted: fmtTime(start), realBlobUrl: null, isReal: false
+        id:idx,start:start,duration:d,score:item.score,
+        title:"Clip #"+(idx+1)+" • "+(item.score>0.75?"High energy":item.score>0.5?"Good hook":"Moment"),
+        blobUrl:url+"#t="+start.toFixed(2)+","+(start+d).toFixed(2),
+        downloadUrl:url,startFormatted:fmtTime(start),realBlobUrl:null,isReal:false
       };
     });
-    setProgress(20); renderResults(); drawTimeline();
 
-    // Pre-cut clips with mobile memory safety
-    // Android Chrome crashes (Aw, Snap!) if we hold too many WebM blobs + high-res canvases
-    var total = clips.length;
-    var maxHold = isMobile ? 3 : 20; // max short blobs kept in RAM at once
-    var ri = 0;
-    var failed = 0;
-    var cutCount = 0;
-    function nextReal() {
-      if (ri >= total) {
-        setProgress(100);
-        var realN = clips.filter(function (c) { return c.isReal; }).length;
-        setStatus("Done • " + realN + "/" + total + " ready" + (failed ? " (" + failed + " failed)" : "") + (isMobile ? " • mobile safe mode" : ""));
-        generating = false; $("generateBtn").disabled = false;
-        $("exportBtn").disabled = false; $("exportBtn").style.opacity = "1";
-        setTimeout(function () { setProgress(0); }, 2500);
-        renderResults();
-        return;
-      }
-      setStatus("Cutting " + (ri + 1) + "/" + total + (isMobile ? " (mobile low-mem mode)" : "") + "…", true);
-      setProgress(15 + Math.round((ri / Math.max(1, total)) * 80));
-      renderClip(url, clips[ri].start, clips[ri].duration).then(function (real) {
-        if (real) {
-          clips[ri].realBlobUrl = real;
-          clips[ri].blobUrl = real;
-          clips[ri].isReal = true;
-          cutCount++;
-          // Free older blobs on mobile so Chrome does not OOM
-          if (isMobile && cutCount > maxHold) {
-            for (var j = 0; j < ri; j++) {
-              if (clips[j].isReal && clips[j].realBlobUrl && (ri - j) > maxHold) {
-                try { URL.revokeObjectURL(clips[j].realBlobUrl); } catch (e) {}
-                // keep isReal flag but mark blob released — will recut on download if needed
-                clips[j].realBlobUrl = null;
-                clips[j].blobUrl = url + "#t=" + clips[j].start.toFixed(2) + "," + (clips[j].start + clips[j].duration).toFixed(2);
-                clips[j]._released = true;
-              }
-            }
-          }
-        } else {
+    renderResults();
+    drawTimeline();
+
+    var caption=$("captionText")?$("captionText").value.trim():"";
+    var total=clips.length;
+    var failed=0;
+
+    try {
+      await loadFFmpegEngine();
+
+      for(var ri=0;ri<total;ri++){
+        setStatus("Encoding clip "+(ri+1)+"/"+total+" • 1080×1920 • 9:16",true);
+        setProgress(15+Math.round((ri/Math.max(1,total))*80));
+
+        var real=await renderClipFFmpeg(file,clips[ri].start,clips[ri].duration,ri,total,caption);
+
+        if(real){
+          clips[ri].realBlobUrl=real;
+          clips[ri].blobUrl=real;
+          clips[ri].isReal=true;
+        }else{
           failed++;
         }
-        if (ri % 2 === 0 || ri === total - 1) {
-          renderResults();
-          drawTimeline();
-        }
-        ri++;
-        // Longer pause on mobile to let GC run
-        setTimeout(nextReal, isMobile ? 600 : 200);
-      });
+
+        renderResults();
+        drawTimeline();
+        await new Promise(function(resolve){setTimeout(resolve,isMobile?250:50);});
+      }
+
+      var ready=clips.filter(function(item){return item.isReal&&item.realBlobUrl;}).length;
+      setProgress(100);
+      setStatus("Done • "+ready+"/"+total+" clips ready"+(failed?" • "+failed+" failed":""));
+      $("exportBtn").disabled=ready===0;
+      $("exportBtn").style.opacity=ready?"1":".4";
+    } catch(error) {
+      console.error("Generator error:",error);
+      setProgress(0);
+      setStatus("FFmpeg could not process this video: "+(error&&error.message?error.message:"unknown error"));
+    } finally {
+      generating=false;
+      $("generateBtn").disabled=false;
     }
-    nextReal();
   });
 
   function renderResults() {
@@ -915,7 +834,7 @@
       } else {
         html += '<button disabled style="height:36px;border-radius:999px;background:#1E293B;color:#64748b;font-size:12px;font-weight:700;opacity:.6">Cutting…</button>';
       }
-      html += '<button data-dl="' + i + '" data-mode="ffmpeg" style="height:36px;border-radius:999px;background:#020617;border:1px solid #1E293B;font-size:12px;font-weight:700;color:#e2e8f0">FFmpeg .txt</button>';
+      html += '<button data-dl="' + i + '" data-mode="ffmpeg" style="height:36px;border-radius:999px;background:#020617;border:1px solid #1E293B;font-size:12px;font-weight:700;color:#e2e8f0">Download MP4</button>';
       html += "</div></div></div>";
     }
     grid.innerHTML = html;
@@ -967,88 +886,40 @@
   }
 
   function downloadOne(clip, mode) {
-    if (mode === "ffmpeg") {
-      var txt = "FFmpeg cut for " + clip.title + "\nFile: " + (file ? file.name : "input.mp4") +
-        "\nStart: " + clip.start.toFixed(3) + "s (" + clip.startFormatted + ")\nDuration: " + clip.duration + "s\n\n" +
-        "ffmpeg -ss " + clip.start.toFixed(3) + " -t " + clip.duration +
-        ' -i "' + (file ? file.name : "input.mp4") + '" -c copy -avoid_negative_ts make_zero clip_' + (clip.id + 1) + ".mp4\n";
-      var b = new Blob([txt], { type: "text/plain;charset=utf-8" });
-      var u = URL.createObjectURL(b);
-      triggerDownload(u, "clip_" + (clip.id + 1) + "_cut.txt");
-      setTimeout(function () { URL.revokeObjectURL(u); }, 1000);
+    if (!clip || !clip.realBlobUrl) {
+      setStatus("This clip is not ready yet.");
       return;
     }
-    // Never download the full original file
-    function doDl(c) {
-      var name = "zlatyn_clip_" + (c.id + 1) + "_" + c.startFormatted.replace(":", "-") + ".webm";
-      triggerDownload(c.realBlobUrl, name);
-      setStatus("Downloaded clip #" + (c.id + 1) + " (" + Math.round(c.duration) + "s)");
-    }
-    if (clip.realBlobUrl) {
-      doDl(clip);
-      return;
-    }
-    // Blob was freed for memory (mobile) or not cut yet — cut this one now
-    if (cutting) { setStatus("Busy cutting another clip — wait…"); return; }
-    cutting = true;
-    setStatus("Cutting clip #" + (clip.id + 1) + " for download…", true);
-    renderClip(url, clip.start, clip.duration).then(function (real) {
-      cutting = false;
-      if (!real) { setStatus("Cut failed — try FFmpeg .txt"); return; }
-      clip.realBlobUrl = real;
-      clip.blobUrl = real;
-      clip.isReal = true;
-      clip._released = false;
-      renderResults();
-      doDl(clip);
-    });
+    var name="NDL_clip_"+(clip.id+1)+"_"+Math.round(clip.duration)+"s_9x16.mp4";
+    triggerDownload(clip.realBlobUrl,name);
+    setStatus("Downloaded clip #"+(clip.id+1)+" • 1080×1920 • 9:16");
   }
 
-  $("exportBtn").addEventListener("click", function () {
-    if (!clips.length || generating || cutting) return;
-    generating = true;
-    $("exportBtn").disabled = true;
-    $("generateBtn").disabled = true;
-    setStatus("Cutting all clips to short files…", true);
-    setProgress(2);
+  $("exportBtn").addEventListener("click",function(){
+    if(!clips.length||generating)return;
+    var ready=clips.filter(function(item){return item.isReal&&item.realBlobUrl;});
+    if(!ready.length){setStatus("Generate the clips first.");return;}
 
-    var cmds = clips.map(function (c) {
-      return "ffmpeg -ss " + c.start.toFixed(3) + " -t " + c.duration + ' -i "' + (file ? file.name : "input.mp4") +
-        '" -c copy clip_' + (c.id + 1) + ".mp4";
-    }).join("\n");
-    var b = new Blob(["# Zlatyn Clip Studio - all cuts\n# " + clips.length + " clips - source " + (file ? file.name : "") + "\n\n" + cmds + "\n"], { type: "text/plain;charset=utf-8" });
-    var txtUrl = URL.createObjectURL(b);
-    triggerDownload(txtUrl, "zlatyn_all_cuts.txt");
-    setTimeout(function () { URL.revokeObjectURL(txtUrl); }, 1500);
+    var i=0;
+    $("exportBtn").disabled=true;
 
-    var ready = clips.filter(function (c) { return c.isReal && c.realBlobUrl; });
-    if (!ready.length) {
-      setStatus("No ready clips yet — wait for Generate to finish cutting");
-      generating = false;
-      $("exportBtn").disabled = false;
-      $("generateBtn").disabled = false;
-      return;
-    }
-    var i = 0;
-    function next() {
-      if (i >= ready.length) {
+    function nextDownload(){
+      if(i>=ready.length){
+        $("exportBtn").disabled=false;
         setProgress(100);
-        setStatus("Downloaded " + ready.length + " short clips");
-        generating = false;
-        $("exportBtn").disabled = false;
-        $("generateBtn").disabled = false;
-        setTimeout(function () { setProgress(0); }, 2000);
+        setStatus("Downloaded "+ready.length+" clips.");
+        setTimeout(function(){setProgress(0);},1800);
         return;
       }
-      setProgress(5 + Math.round((i / ready.length) * 90));
-      setStatus("Downloading " + (i + 1) + "/" + ready.length + "…", true);
-      var c = ready[i];
-      var name = "zlatyn_clip_" + (c.id + 1) + "_" + c.startFormatted.replace(":", "-") + ".webm";
-      triggerDownload(c.realBlobUrl, name);
+      var clip=ready[i];
+      var name="NDL_clip_"+(clip.id+1)+"_"+Math.round(clip.duration)+"s_9x16.mp4";
+      triggerDownload(clip.realBlobUrl,name);
+      setProgress(5+Math.round((i/ready.length)*90));
+      setStatus("Downloading "+(i+1)+"/"+ready.length+"…",true);
       i++;
-      setTimeout(next, 700);
+      setTimeout(nextDownload,600);
     }
-    next();
+    nextDownload();
   });
 
   if (isMobile) {
