@@ -290,33 +290,136 @@
     $("generateBtn").textContent = "Generate " + clipCount + " Clips • " + clipLen + "s • " + aspect;
   }
 
-  function fallbackPeaks(dur, len, maxC) {
-    // Spread evenly across the video (not random) so user still gets useful cuts
-    var out = [];
-    var n = Math.max(maxC, 1);
-    var span = Math.max(0.5, dur - len);
-    for (var i = 0; i < n; i++) {
-      var start = n === 1 ? 0 : (i / (n - 1)) * span;
-      out.push({ start: start, score: 0.5 });
-    }
-    return out;
+  // ---- Viral-hook intelligence (local, no paid AI) ----
+  // The browser cannot honestly "understand" spoken meaning without a speech-to-text/AI model.
+  // Instead, this scorer combines signals that correlate with strong short-form openings:
+  // sudden audio onset, sustained energy, speech activity, visual change, local peaks,
+  // low dead-air, and enough context after the opening. Scores are 0-100.
+  var MIN_HOOK_SCORE = 30;
+
+  function clamp01(v) {
+    return Math.max(0, Math.min(1, Number(v) || 0));
   }
 
-  // ---- Peak detection: audio RMS + visual frame energy ----
+  function normalizeArray(values) {
+    var max = 0;
+    for (var i = 0; i < values.length; i++) max = Math.max(max, values[i] || 0);
+    if (max <= 0) return values.map(function(){ return 0; });
+    return values.map(function(v){ return clamp01(v / max); });
+  }
+
+  function fallbackPeaks(dur, len, maxC) {
+    // Deliberately returns NO fake low-quality candidates.
+    // If analysis cannot find a 30+ moment, the generator must show fewer clips.
+    return [];
+  }
+
+  function scoreHookSamples(samples, dur, len) {
+    if (!samples.length) return [];
+
+    var audio = normalizeArray(samples.map(function(s){ return s.audio || 0; }));
+    var visual = normalizeArray(samples.map(function(s){ return s.visual || 0; }));
+    var onset = normalizeArray(samples.map(function(s){ return s.onset || 0; }));
+    var speech = normalizeArray(samples.map(function(s){ return s.speech || 0; }));
+    var sustain = [];
+
+    for (var i = 0; i < samples.length; i++) {
+      var windowEnd = samples[i].t + Math.min(6, Math.max(2.5, len * 0.2));
+      var sum = 0, count = 0, maxLocal = 0;
+      for (var j = i; j < samples.length && samples[j].t <= windowEnd; j++) {
+        var e = 0.62 * audio[j] + 0.22 * visual[j] + 0.16 * speech[j];
+        sum += e; count++;
+        if (e > maxLocal) maxLocal = e;
+      }
+      sustain.push(count ? clamp01((sum / count) * 1.15 + maxLocal * 0.15) : 0);
+    }
+
+    var scored = [];
+    for (var k = 0; k < samples.length; k++) {
+      var s = samples[k];
+      var prev = k > 0 ? (0.62 * audio[k-1] + 0.22 * visual[k-1] + 0.16 * speech[k-1]) : 0;
+      var now = 0.62 * audio[k] + 0.22 * visual[k] + 0.16 * speech[k];
+      var delta = clamp01((now - prev + 0.15) / 1.15);
+
+      // Hook qualities:
+      // 25 sudden attention / pattern interrupt
+      // 20 immediate audio/speech presence
+      // 15 visual change
+      // 15 sustained interest after the opening
+      // 10 strong local moment
+      // 10 good position/context
+      // 5 anti-dead-air / anti-outro quality
+      var local = Math.max(audio[k], visual[k], speech[k]);
+      var position = dur > 0 ? s.t / dur : 0;
+      var positionScore = position < 0.03 ? 0.72 :
+                          position < 0.35 ? 1.00 :
+                          position < 0.82 ? 0.93 :
+                          position < 0.94 ? 0.70 : 0.35;
+      var deadAirPenalty = (audio[k] < 0.12 && speech[k] < 0.10 && visual[k] < 0.10) ? 0.35 : 0;
+      var outroPenalty = position > 0.93 ? 0.30 : 0;
+
+      var raw =
+        25 * clamp01(onset[k] * 0.72 + delta * 0.28) +
+        20 * clamp01(audio[k] * 0.55 + speech[k] * 0.45) +
+        15 * visual[k] +
+        15 * sustain[k] +
+        10 * local +
+        10 * positionScore +
+        5 * clamp01(1 - deadAirPenalty - outroPenalty);
+
+      var score = Math.round(Math.max(0, Math.min(100, raw)));
+      if (score < MIN_HOOK_SCORE) continue;
+
+      // Start a little BEFORE the attention peak so the viewer hears the setup
+      // instead of entering after the punchline has already started.
+      var lead = Math.min(3.0, Math.max(1.2, len * 0.08));
+      var start = Math.max(0, s.t - lead);
+      if (start > dur - Math.min(len, dur) - 0.2) continue;
+
+      scored.push({
+        start: start,
+        peak: s.t,
+        score: score,
+        audio: audio[k],
+        visual: visual[k],
+        speech: speech[k],
+        onset: onset[k],
+        sustain: sustain[k]
+      });
+    }
+
+    scored.sort(function(a,b){ return b.score - a.score; });
+
+    // Non-max suppression: don't return five versions of the same moment.
+    var picked = [];
+    for (var p = 0; p < scored.length; p++) {
+      if (picked.length >= Math.max(1, Math.min(100, samples.length))) break;
+      var candidate = scored[p];
+      var tooClose = false;
+      for (var q = 0; q < picked.length; q++) {
+        if (Math.abs(picked[q].start - candidate.start) < Math.max(5, len * 0.55)) {
+          tooClose = true;
+          break;
+        }
+      }
+      if (!tooClose) picked.push(candidate);
+    }
+    return picked;
+  }
+
   function analyzePeaks(videoUrl, dur, len, maxC, onProgress) {
     return new Promise(function (resolve) {
       var video = document.createElement("video");
       video.src = videoUrl;
-      video.muted = true; // required for autoplay policies; we still read analyser from element source
+      video.muted = true;
       video.playsInline = true;
       video.preload = "auto";
       video.crossOrigin = "anonymous";
       video.volume = 0;
 
       var samples = [];
-      var step = Math.max(0.5, Math.min(1.5, dur / 120));
-      var t = 0;
-      var done = false;
+      var step = Math.max(0.45, Math.min(1.0, dur / 150));
+      var t = 0, done = false, previousEnergy = 0;
       var canvas = document.createElement("canvas");
       canvas.width = 160;
       canvas.height = 90;
@@ -335,52 +438,48 @@
       }
 
       function finish() {
-        if (done && samples.length) {
-          // already finished
-        }
-        cleanup();
-        // normalize scores
-        var maxS = 0;
-        for (var i = 0; i < samples.length; i++) if (samples[i].score > maxS) maxS = samples[i].score;
-        if (maxS < 0.001) {
-          resolve(fallbackPeaks(dur, len, maxC));
+        if (done && !samples.length) {
+          resolve([]);
           return;
         }
-        for (var j = 0; j < samples.length; j++) samples[j].score = Math.min(1, samples[j].score / maxS);
-
-        samples.sort(function (a, b) { return b.score - a.score; });
-        var picked = [];
-        for (var k = 0; k < samples.length; k++) {
-          var p = samples[k];
-          if (picked.length >= maxC) break;
-          if (p.start > dur - Math.min(len, dur) - 0.2) continue;
-          if (p.score < 0.08) continue;
-          var overlap = false;
-          for (var m = 0; m < picked.length; m++) {
-            if (Math.abs(picked[m].start - p.start) < len * 0.7) { overlap = true; break; }
-          }
-          if (!overlap) picked.push(p);
-        }
-        resolve(picked.length ? picked : fallbackPeaks(dur, len, maxC));
+        cleanup();
+        var scored = scoreHookSamples(samples, dur, len);
+        // Hard rule: nothing below 30 can ever enter the results.
+        scored = scored.filter(function(x){ return x.score >= MIN_HOOK_SCORE; });
+        scored.sort(function(a,b){ return b.score - a.score; });
+        resolve(scored.slice(0, Math.max(maxC, 1)));
       }
 
       function measure() {
-        var audioScore = 0;
-        var visualScore = 0;
+        var audioScore = 0, visualScore = 0, speechScore = 0;
 
         if (analyser && td && fd) {
           analyser.getByteTimeDomainData(td);
           analyser.getByteFrequencyData(fd);
+
           var sum = 0;
           for (var i = 0; i < td.length; i++) {
             var v = (td[i] - 128) / 128;
             sum += v * v;
           }
           var rms = Math.sqrt(sum / td.length);
-          var freqSum = 0;
-          for (var f = 0; f < fd.length; f++) freqSum += fd[f];
-          var freqAvg = freqSum / (fd.length * 255);
-          audioScore = rms * 3 + freqAvg * 2;
+
+          var low = 0, mid = 0, high = 0;
+          var split1 = Math.floor(fd.length * 0.08);
+          var split2 = Math.floor(fd.length * 0.45);
+          for (var f = 0; f < fd.length; f++) {
+            var fv = fd[f] / 255;
+            if (f < split1) low += fv;
+            else if (f < split2) mid += fv;
+            else high += fv;
+          }
+          low /= Math.max(1, split1);
+          mid /= Math.max(1, split2 - split1);
+          high /= Math.max(1, fd.length - split2);
+
+          audioScore = clamp01(rms * 4.2 + mid * 1.8 + low * 0.6);
+          // Speech-like material generally carries useful mid-band energy.
+          speechScore = clamp01(mid * 1.8 + high * 0.55 + rms * 1.2);
         }
 
         if (ctx2d && video.videoWidth) {
@@ -389,19 +488,24 @@
             var frame = ctx2d.getImageData(0, 0, canvas.width, canvas.height).data;
             if (prevFrame) {
               var diff = 0, n = frame.length;
-              for (var i = 0; i < n; i += 16) {
-                diff += Math.abs(frame[i] - prevFrame[i]);
-              }
-              visualScore = (diff / (n / 16)) / 255;
+              for (var j = 0; j < n; j += 16) diff += Math.abs(frame[j] - prevFrame[j]);
+              visualScore = clamp01((diff / (n / 16)) / 255 * 2.2);
             }
             prevFrame = frame;
           } catch (e) {}
         }
 
-        var score = Math.max(audioScore, visualScore * 1.4);
-        // slight boost for middle of video (hooks often not at very start)
-        if (t > 3 && t < dur - 3) score *= 1.05;
-        samples.push({ start: t, score: score });
+        var currentEnergy = clamp01(audioScore * 0.60 + visualScore * 0.25 + speechScore * 0.15);
+        var onset = clamp01((currentEnergy - previousEnergy) * 4 + currentEnergy * 0.20);
+        previousEnergy = currentEnergy;
+
+        samples.push({
+          t: t,
+          audio: audioScore,
+          visual: visualScore,
+          speech: speechScore,
+          onset: onset
+        });
       }
 
       function sampleAt() {
@@ -410,10 +514,10 @@
           finish();
           return;
         }
+
         var target = Math.min(t, dur - 0.05);
         var onSeeked = function () {
           video.removeEventListener("seeked", onSeeked);
-          // play a tiny bit so decoder + analyser update
           var p = video.play();
           if (p && p.catch) p.catch(function () {});
           setTimeout(function () {
@@ -423,15 +527,13 @@
             if (onProgress) onProgress(Math.min(99, Math.round((t / dur) * 100)));
             t += step;
             sampleAt();
-          }, 120);
+          }, 100);
         };
+
         video.addEventListener("seeked", onSeeked);
         try {
-          if (Math.abs(video.currentTime - target) < 0.05) {
-            onSeeked();
-          } else {
-            video.currentTime = target;
-          }
+          if (Math.abs(video.currentTime - target) < 0.05) onSeeked();
+          else video.currentTime = target;
         } catch (e) {
           t += step;
           sampleAt();
@@ -442,13 +544,12 @@
         try {
           if (AC) {
             actx = new AC();
-            if (actx.state === "suspended") actx.resume().catch(function () {});
+            if (actx.state === "suspended") actx.resume().catch(function(){});
             source = actx.createMediaElementSource(video);
             analyser = actx.createAnalyser();
             analyser.fftSize = 2048;
-            analyser.smoothingTimeConstant = 0.2;
+            analyser.smoothingTimeConstant = 0.15;
             source.connect(analyser);
-            // also connect to destination at near-zero gain so some browsers process audio
             var gain = actx.createGain();
             gain.gain.value = 0.0001;
             analyser.connect(gain);
@@ -459,8 +560,9 @@
         } catch (e) {}
         sampleAt();
       });
+
       video.addEventListener("error", function () { finish(); });
-      setTimeout(function () { if (!done) finish(); }, Math.min(60000, dur * 100 + 10000));
+      setTimeout(function () { if (!done) finish(); }, Math.min(90000, dur * 120 + 15000));
     });
   }
 
@@ -640,10 +742,7 @@
     analyzePeaks(url, duration, clipLen, clipCount * 4, function (p) { setProgress(p); })
       .then(function (list) {
         peaks = list; analyzing = false; setProgress(0);
-        var avg = 0;
-        for (var i = 0; i < list.length; i++) avg += list[i].score;
-        avg = list.length ? avg / list.length : 0;
-        setStatus("Ready • " + fmtTime(duration) + " • " + list.length + " peaks (avg " + Math.round(avg * 100) + ")");
+            setStatus("Ready • " + fmtTime(duration) + " • " + list.length + " qualified hooks (30+ only)");
         updateMeta(); drawWave();
       })
       .catch(function () {
@@ -721,44 +820,48 @@
     setProgress(5);
     setStatus("Selecting the strongest moments…", true);
 
-    var candidates = peaks.length ? peaks.slice() : fallbackPeaks(duration, clipLen, clipCount * 2);
-    candidates.sort(function(a,b){return b.score-a.score;});
+    // Only clips scoring 30/100 or higher are eligible.
+    // Quality beats quantity: if only 4 clips qualify, we return 4 — never pad with junk.
+    var candidates = (peaks || []).filter(function(item){
+      return item && Number(item.score) >= MIN_HOOK_SCORE;
+    }).slice();
 
-    var chosen=[];
-    for(var i=0;i<candidates.length && chosen.length<clipCount;i++){
-      var candidate=candidates[i];
-      if(candidate.start>duration-Math.min(clipLen,duration)-0.3) continue;
-      var separated=true;
-      for(var j=0;j<chosen.length;j++){
-        if(Math.abs(chosen[j].start-candidate.start)<clipLen*0.7){separated=false;break;}
-      }
-      if(separated) chosen.push(candidate);
-    }
+    candidates.sort(function(a,b){ return b.score-a.score; });
 
-    if(chosen.length<clipCount){
-      var span=Math.max(0.5,duration-clipLen);
-      for(var fi=0;fi<clipCount && chosen.length<clipCount;fi++){
-        var fallbackStart=clipCount===1?0:(fi/(clipCount-1))*span;
-        var ok=true;
-        for(var fk=0;fk<chosen.length;fk++){
-          if(Math.abs(chosen[fk].start-fallbackStart)<clipLen*0.5){ok=false;break;}
+    var chosen = [];
+    for (var i = 0; i < candidates.length && chosen.length < clipCount; i++) {
+      var candidate = candidates[i];
+      var candidateStart = Math.max(0, Math.min(candidate.start, Math.max(0, duration - 1)));
+      if (candidateStart > duration - Math.min(clipLen, duration) - 0.3) continue;
+
+      var separated = true;
+      for (var j = 0; j < chosen.length; j++) {
+        if (Math.abs(chosen[j].start - candidateStart) < Math.max(5, clipLen * 0.55)) {
+          separated = false;
+          break;
         }
-        if(ok) chosen.push({start:fallbackStart,score:0.45});
+      }
+      if (separated) {
+        chosen.push({
+          start: candidateStart,
+          score: Number(candidate.score) || 0,
+          peak: candidate.peak || candidateStart
+        });
       }
     }
 
-    chosen.sort(function(a,b){return a.start-b.start;});
+    chosen.sort(function(a,b){ return b.score-a.score; });
 
-    clips=chosen.map(function(item,idx){
-      var start=Math.max(0,Math.min(item.start,Math.max(0,duration-1)));
-      var d=Math.min(clipLen,Math.max(1,duration-start));
-      return {
-        id:idx,start:start,duration:d,score:item.score,
-        title:"Clip #"+(idx+1)+" • "+(item.score>0.75?"High energy":item.score>0.5?"Good hook":"Moment"),
-        blobUrl:url+"#t="+start.toFixed(2)+","+(start+d).toFixed(2),
-        downloadUrl:url,startFormatted:fmtTime(start),realBlobUrl:null,isReal:false
-      };
-    });
+    if (!chosen.length) {
+      setProgress(0);
+      setStatus("No 30+ hooks found — no weak clips added.");
+      renderResults();
+      generating = false;
+      $("generateBtn").disabled = false;
+      return;
+    }
+
+    chosen.sort(function(a,b){ return a.start-b.start; });
 
     renderResults();
     drawTimeline();
