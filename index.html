@@ -143,7 +143,7 @@
 
           <div style="margin-top:20px;border-radius:12px;background:#020617;border:1px solid #1E293B;padding:12px">
             <div style="font-size:12px;font-weight:600;color:#22D3EE">Auto-cut on Generate</div>
-            <div class="muted" style="margin-top:4px;font-size:11px">Phone: uses low-memory mode (360p, fewer clips in RAM) to avoid Chrome “Aw, Snap!”. Desktop: higher quality. For 50+ clips prefer a computer, or use FFmpeg .txt on your phone after Generate.</div>
+            <div class="muted" style="margin-top:4px;font-size:11px">Clips are encoded one at a time with FFmpeg and each FFmpeg input/output file is removed before the next clip starts.</div>
           </div>
 
           <div style="margin-top:24px">
@@ -878,7 +878,7 @@
           drawTimeline();
           resolve(clip);
         } else {
-          setStatus("Cut failed — use FFmpeg .txt for a guaranteed short MP4");
+          setStatus("Cut failed — the clip will be skipped and the next clip will continue.");
           resolve(null);
         }
       });
