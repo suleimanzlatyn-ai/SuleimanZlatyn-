@@ -65,6 +65,8 @@ function safeText(value) {
   return String(value || "").replace(/\\/g, "\\\\").replace(/:/g, "\\:").replace(/'/g, "\\\\'");
 }
 
+const jobs = new Map();
+
 app.post("/api/process", async (req, res) => {
   const { source, start, duration, index, caption = "" } = req.body || {};
   const s = Number(start), d = Number(duration);
@@ -73,23 +75,45 @@ app.post("/api/process", async (req, res) => {
   }
   const matches = (await fsp.readdir(UPLOADS)).filter(name => name.startsWith(source + "."));
   if (!matches.length) return res.status(404).json({ ok: false, error: "The uploaded source expired or was not found. Upload the video again." });
+
   const input = path.join(UPLOADS, matches[0]);
   const id = crypto.randomUUID();
   const outputName = "zlatyn-clip-" + (Number.isFinite(Number(index)) ? Number(index) + 1 : 1) + "-" + id + ".mp4";
   const output = path.join(OUTPUTS, outputName);
-  try {
-    let vf = "crop=if(gte(iw/ih\\,9/16)\\,ih*9/16\\,iw):if(gte(iw/ih\\,9/16)\\,ih\\,iw*16/9):(iw-ow)/2:(ih-oh)/2,scale=1080:1920,unsharp=5:5:0.8:3:3:0.4";
-    if (String(caption || "").trim()) {
-      const text = safeText(String(caption).trim().slice(0, 180));
-      vf += ",drawtext=text='" + text + "':fontcolor=white:fontsize=64:borderw=4:bordercolor=black:x=(w-text_w)/2:y=h*0.08";
+  jobs.set(id, { status: "queued", createdAt: Date.now(), url: null, error: null });
+
+  // Respond immediately. Encoding continues in the background so a long FFmpeg run
+  // cannot leave the browser waiting on one HTTP request until the platform times out.
+  res.status(202).json({ ok: true, jobId: id });
+
+  void (async () => {
+    const job = jobs.get(id);
+    if (!job) return;
+    job.status = "processing";
+    try {
+      let vf = "crop=if(gte(iw/ih\\,9/16)\\,ih*9/16\\,iw):if(gte(iw/ih\\,9/16)\\,ih\\,iw*16/9):(iw-ow)/2:(ih-oh)/2,scale=1080:1920";
+      if (String(caption || "").trim()) {
+        const text = safeText(String(caption).trim().slice(0, 180));
+        vf += ",drawtext=text='" + text + "':fontcolor=white:fontsize=64:borderw=4:bordercolor=black:x=(w-text_w)/2:y=h*0.08";
+      }
+      await runFFmpeg(["-hide_banner","-loglevel","error","-ss",String(s),"-i",input,"-t",String(d),"-vf",vf,"-c:v","libx264","-preset","ultrafast","-crf","24","-threads","1","-c:a","aac","-b:a","128k","-movflags","+faststart","-y",output]);
+      job.status = "done";
+      job.url = "/outputs/" + outputName;
+      job.finishedAt = Date.now();
+    } catch (e) {
+      console.error("FFmpeg clip failed:", e);
+      await fsp.rm(output, { force: true }).catch(() => {});
+      job.status = "failed";
+      job.error = e.message || "FFmpeg processing failed.";
+      job.finishedAt = Date.now();
     }
-    await runFFmpeg(["-hide_banner","-loglevel","error","-ss",String(s),"-i",input,"-t",String(d),"-vf",vf,"-c:v","libx264","-preset","ultrafast","-crf","24","-c:a","aac","-b:a","128k","-movflags","+faststart","-y",output]);
-    res.json({ ok: true, url: "/outputs/" + outputName, index: Number(index) || 0, duration: d });
-  } catch (e) {
-    console.error("FFmpeg clip failed:", e);
-    await fsp.rm(output, { force: true }).catch(() => {});
-    res.status(500).json({ ok: false, error: e.message || "FFmpeg processing failed." });
-  }
+  })();
+});
+
+app.get("/api/jobs/:jobId", (req, res) => {
+  const job = jobs.get(req.params.jobId);
+  if (!job) return res.status(404).json({ ok: false, error: "Processing job not found. Please generate the clip again." });
+  res.json({ ok: true, status: job.status, url: job.url, error: job.error });
 });
 
 app.use(express.static(ROOT, { index: "index.html", etag: true }));
