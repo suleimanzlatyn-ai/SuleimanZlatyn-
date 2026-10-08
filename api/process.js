@@ -20,6 +20,19 @@ function runFFmpeg(args){
   });
 }
 
+async function ensureFont(dir){
+  const font=path.join(dir,"zlatyn_caption.ttf");
+  if(fs.existsSync(font)) return font;
+  const response=await fetch("https://raw.githubusercontent.com/ffmpegwasm/testdata/master/arial.ttf");
+  if(!response.ok) throw new Error("Caption font download failed.");
+  await fsp.writeFile(font,Buffer.from(await response.arrayBuffer()));
+  return font;
+}
+
+function escapeDrawtext(value){
+  return String(value||"").replace(/\\/g,"\\\\").replace(/:/g,"\\:").replace(/'/g,"\\\\'");
+}
+
 async function blobToFile(source,filename){
   const access=process.env.BLOB_ACCESS==="private"?"private":"public";
   const result=await get(source,{access});
@@ -45,7 +58,13 @@ export default async function handler(req,res){
   const output=path.join(dir,"clip.mp4");
   try{
     await blobToFile(source,input);
-    const vf=["crop=ih*9/16:ih:(iw-ow)/2:0","scale=1080:1920","unsharp=5:5:0.8:3:3:0.4"].join(",");
+    let vf=["crop=ih*9/16:ih:(iw-ow)/2:0","scale=1080:1920","unsharp=5:5:0.8:3:3:0.4"].join(",");
+    if(String(caption||"").trim()){
+      const font=await ensureFont(dir);
+      const text=escapeDrawtext(caption.trim().slice(0,180));
+      vf += ",drawtext=fontfile="+font+":text='"+text+"':fontcolor=white:fontsize=80:fontweight=bold:borderw=5:bordercolor=black:shadowx=2:shadowy=2:x=(w-text_w)/2:y=120";
+      vf += ",drawtext=fontfile="+font+":text='"+text+"':fontcolor=white:fontsize=80:fontweight=bold:borderw=5:bordercolor=black:shadowx=2:shadowy=2:x=(w-text_w)/2:y=1620";
+    }
     const args=["-hide_banner","-loglevel","error","-ss",String(Math.max(0,s)),"-i",input,"-t",String(Math.max(.5,d)),"-vf",vf,"-af","loudnorm","-c:v","libx264","-preset","veryfast","-crf","23","-c:a","aac","-movflags","+faststart","-avoid_negative_ts","make_zero","-y",output];
     await runFFmpeg(args);
     const data=await fsp.readFile(output);
