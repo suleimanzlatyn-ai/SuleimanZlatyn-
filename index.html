@@ -1246,44 +1246,11 @@
     var failed=0;
 
     try {
-      var state=await getBackendState();
       var backendResult=null;
+      setStatus("Starting native FFmpeg backend…",true);
+      backendResult=await runZlatynBackend(total,caption);
+      failed=backendResult.failed;
 
-      if(state.backend && state.storageConfigured){
-        setStatus("Preparing fast server renderer…",true);
-        var uploaded=await uploadSourceToBackend(file);
-        if(!uploaded || !uploaded.url) throw new Error("Server upload did not return a source URL.");
-        backendResult=await runBackendClips(uploaded.url,total,caption);
-        failed=backendResult.failed;
-      }else{
-        setStatus("Fast backend unavailable • using local renderer",true);
-        await loadFFmpegEngine();
-
-        for(var ri=0;ri<total;ri++){
-          setStatus("Encoding clip "+(ri+1)+"/"+total+" • 1080×1920 • 9:16",true);
-          setProgress(15+Math.round((ri/Math.max(1,total))*80));
-
-          var real=await renderClipFFmpeg(file,clips[ri].start,clips[ri].duration,ri,total,caption);
-          if(real){
-            clips[ri].realBlobUrl=real;
-            clips[ri].blobUrl=real;
-            clips[ri].isReal=true;
-          }else{
-            failed++;
-          }
-          renderResults();
-          drawTimeline();
-          await new Promise(function(resolve){setTimeout(resolve,isMobile?100:25);});
-        }
-      }
-
-      var ready=clips.filter(function(item){return item.isReal&&item.realBlobUrl;}).length;
-      setProgress(100);
-      setStatus("Done • "+ready+"/"+total+" clips ready"+(failed?" • "+failed+" failed":""));
-      $("exportBtn").disabled=ready===0;
-      $("exportBtn").style.opacity=ready?"1":".4";
-      try { if (ffmpegInstance) ffmpegInstance.FS("unlink", "zlatyn_caption.ttf"); } catch(e) {}
-      ffmpegFontPromise = null;
     } catch(error) {
       console.error("Generator error:",error);
       setProgress(0);
