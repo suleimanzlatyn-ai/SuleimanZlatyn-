@@ -1016,7 +1016,6 @@
   });
 
   var backendState = null;
-  var backendClientPromise = null;
 
   async function getBackendState(){
     if(backendState) return backendState;
@@ -1031,23 +1030,17 @@
   }
 
   async function uploadSourceToBackend(sourceFile){
-    var state=await getBackendState();
-    if(!state.backend || !state.storageConfigured) return null;
-    if(!backendClientPromise){
-      backendClientPromise=import("https://esm.sh/@vercel/blob@2.3.0/client");
-    }
-    var mod=await backendClientPromise;
-    var result=await mod.upload("source/"+Date.now()+"-"+String(sourceFile.name||"video.mp4").replace(/[^a-zA-Z0-9._-]/g,"_"),sourceFile,{
-      access:state.access==="private"?"private":"public",
-      handleUploadUrl:"/api/upload",
-      multipart:true,
-      onUploadProgress:function(p){
-        var pct=Number(p.percentage||0);
-        setProgress(Math.min(12,Math.round(pct*.12)));
-        setStatus("Uploading source • "+Math.round(pct)+"%",true);
-      }
-    });
-    return result;
+    var form=new FormData();
+    form.append("video",sourceFile,sourceFile.name||"video.mp4");
+    setProgress(8);
+    setStatus("Uploading video to temporary processing storage…",true);
+    var response=await fetch("/api/upload",{method:"POST",body:form});
+    var data={};
+    try{data=await response.json();}catch(e){}
+    if(!response.ok || !data.ok) throw new Error(data.error||"Video upload failed.");
+    setProgress(12);
+    setStatus("Upload complete • preparing FFmpeg clips…",true);
+    return data.sourceRef;
   }
 
   async function processBackendClip(sourceRef,clip,index,total,caption){
@@ -1069,7 +1062,7 @@
   }
 
   async function runBackendClips(sourceRef,total,caption){
-    var next=0, completed=0, failed=0, concurrency=Math.min(2,total);
+    var next=0, completed=0, failed=0, concurrency=1;
     async function worker(){
       while(true){
         var index=next++;
@@ -1201,7 +1194,7 @@
       setStatus("Checking video-processing backend…",true);
       try {
         var backend=await getBackendState();
-        if(backend.backend && backend.storageConfigured && backend.ffmpegAvailable) {
+        if(backend.backend && backend.ffmpegAvailable) {
           var sourceRef=await uploadSourceToBackend(file);
           if(sourceRef) {
             backendResult=await runBackendClips(sourceRef,total,caption);
