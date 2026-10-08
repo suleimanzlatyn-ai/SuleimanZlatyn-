@@ -63,7 +63,7 @@
         <span style="display:block">That Load.</span>
       </h1>
       <p style="margin-top:16px;font-size:17px;line-height:1.625;color:#cbd5e1;max-width:560px">
-        Client-side video analysis combines audio energy, speech-like activity, visual changes, hook structure, story development and payoff signals. FFmpeg encodes the selected clips locally in sequence. Weak moments are rejected instead of padded.
+        Client-side editor intelligence combines audio energy, speech-like activity, visual changes, hook structure, story development and payoff signals. FFmpeg encodes selected clips locally in sequence. Weak moments are rejected instead of padded.
       </p>
       <div style="margin-top:28px">
         <a href="#studio" class="btn-grad" style="height:48px;padding:0 24px;border-radius:999px;display:inline-grid;place-items:center;font-weight:700;font-size:15px;color:#fff">Start Clipping — Free</a>
@@ -749,6 +749,8 @@
   // ---- Client-side FFmpeg clip renderer ----
   var ffmpegInstance = null;
   var ffmpegLoadPromise = null;
+  var ffmpegFontPromise = null;
+  var FFmpegCaptionFont = "https://raw.githubusercontent.com/ffmpegwasm/testdata/master/arial.ttf";
 
   function getFFmpegEngine() {
     if (ffmpegInstance) return ffmpegInstance;
@@ -792,10 +794,27 @@
       .replace(/\]/g, "\\]");
   }
 
+  async function ensureCaptionFont(engine, text) {
+    if (!String(text || "").trim()) return false;
+    if (!ffmpegFontPromise) {
+      ffmpegFontPromise = window.FFmpeg.fetchFile(FFmpegCaptionFont)
+        .then(function(data) {
+          engine.FS("writeFile", "zlatyn_caption.ttf", data);
+          return true;
+        })
+        .catch(function(err) {
+          ffmpegFontPromise = null;
+          console.warn("Caption font could not be loaded:", err);
+          return false;
+        });
+    }
+    return await ffmpegFontPromise;
+  }
+
   function captionFilter(text) {
     var safe = ffmpegText(text);
     if (!safe) return "";
-    var font = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf";
+    var font = "/zlatyn_caption.ttf";
     var top = "drawtext=fontfile=" + font + ":text='" + safe + "':fontcolor=white:fontsize=80:fontweight=bold:borderw=5:bordercolor=black:shadowx=2:shadowy=2:x=(w-text_w)/2:y=120";
     var bottom = "drawtext=fontfile=" + font + ":text='" + safe + "':fontcolor=white:fontsize=80:fontweight=bold:borderw=5:bordercolor=black:shadowx=2:shadowy=2:x=(w-text_w)/2:y=1620";
     return top + "," + bottom;
@@ -813,7 +832,11 @@
       engine.FS("writeFile", inputName, await window.FFmpeg.fetchFile(sourceFile));
 
       var vf = "crop=ih*9/16:ih:(iw-ow)/2:0,scale=1080:1920,unsharp=5:5:0.8:3:3:0.4";
-      var cf = captionFilter(caption);
+      var cf = "";
+      if (String(caption || "").trim()) {
+        var fontReady = await ensureCaptionFont(engine, caption);
+        if (fontReady) cf = captionFilter(caption);
+      }
       if (cf) vf += "," + cf;
 
       await engine.run(
@@ -1026,7 +1049,16 @@
         chosen.push({
           start: candidateStart,
           score: Number(candidate.score) || 0,
-          peak: candidate.peak || candidateStart
+          peak: candidate.peak || candidateStart,
+          type: candidate.type,
+          reason: candidate.reason,
+          recommendedDuration: candidate.recommendedDuration,
+          features: candidate.features,
+          audio: candidate.audio,
+          visual: candidate.visual,
+          speech: candidate.speech,
+          onset: candidate.onset,
+          sustain: candidate.sustain
         });
       }
     }
@@ -1109,6 +1141,8 @@
       setStatus("Done • "+ready+"/"+total+" clips ready"+(failed?" • "+failed+" failed":""));
       $("exportBtn").disabled=ready===0;
       $("exportBtn").style.opacity=ready?"1":".4";
+      try { if (ffmpegInstance) ffmpegInstance.FS("unlink", "zlatyn_caption.ttf"); } catch(e) {}
+      ffmpegFontPromise = null;
     } catch(error) {
       console.error("Generator error:",error);
       setProgress(0);
@@ -1172,35 +1206,8 @@
     setTimeout(function () { try { document.body.removeChild(a); } catch (e) {} }, 200);
   }
 
-  function ensureRealClip(clip) {
-    return new Promise(function (resolve) {
-      if (clip.realBlobUrl && clip.isReal) {
-        resolve(clip);
-        return;
-      }
-      if (cutting) {
-        setStatus("Already cutting another clip — wait…");
-        resolve(null);
-        return;
-      }
-      cutting = true;
-      setStatus("Cutting short clip #" + (clip.id + 1) + " (" + Math.round(clip.duration) + "s)…", true);
-      renderClip(url, clip.start, clip.duration).then(function (real) {
-        cutting = false;
-        if (real) {
-          clip.realBlobUrl = real;
-          clip.blobUrl = real;
-          clip.isReal = true;
-          renderResults();
-          drawTimeline();
-          resolve(clip);
-        } else {
-          setStatus("Cut failed — the clip will be skipped and the next clip will continue.");
-          resolve(null);
-        }
-      });
-    });
-  }
+  // Clips are encoded sequentially during Generate; no second legacy renderer is used here.
+
 
   function downloadOne(clip, mode) {
     if (!clip || !clip.realBlobUrl) {
@@ -1254,4 +1261,3 @@
 </script>
 
 </body>
-</html>
