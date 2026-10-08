@@ -93,7 +93,7 @@ app.post("/api/process", async (req, res) => {
 });
 
 app.use(express.static(ROOT, { index: "index.html", etag: true }));
-app.get("*", (_req, res) => res.sendFile(path.join(ROOT, "index.html")));
+app.get(/.*/, (_req, res) => res.sendFile(path.join(ROOT, "index.html")));
 app.use((err, _req, res, _next) => {
   console.error("Request error:", err.message);
   const status = err instanceof multer.MulterError ? 413 : 400;
