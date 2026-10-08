@@ -1,0 +1,10 @@
+{
+  "name": "zlatyn-clip-studio",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@vercel/blob": "^2.3.0",
+    "ffmpeg-static": "^5.2.0"
+  }
+}
