@@ -598,7 +598,7 @@
       video.volume = 0;
 
       var samples = [];
-      var step = Math.max(0.45, Math.min(1.0, dur / 150));
+      var step = Math.max(1.5, Math.min(2.5, dur / 80));
       var t = 0, done = false, previousEnergy = 0;
       var canvas = document.createElement("canvas");
       canvas.width = 160;
@@ -1097,10 +1097,11 @@
     setProgress(5);
     setStatus("Selecting the strongest moments…", true);
 
-    // Only clips scoring 30/100 or higher are eligible.
-    // Quality beats quantity: if only 4 clips qualify, we return 4 — never pad with junk.
+    // Prefer scored moments, but do not silently return one clip when the user requested a batch.
+    // The browser-only signal scorer is heuristic, not semantic AI. If it finds too few
+    // strong moments, fill the remaining slots with evenly distributed cuts and label them honestly.
     var candidates = (peaks || []).filter(function(item){
-      return item && Number(item.score) >= MIN_HOOK_SCORE;
+      return item && Number.isFinite(Number(item.score));
     }).slice();
 
     candidates.sort(function(a,b){ return b.score-a.score; });
@@ -1138,9 +1139,50 @@
 
     chosen.sort(function(a,b){ return b.score-a.score; });
 
+    // Fill any shortfall using spaced timeline cuts, as long as the source has enough
+    // footage for distinct start points. These are fallback cuts, not claimed AI discoveries.
+    var targetCount = Math.max(1, clipCount);
+    var minSpacing = Math.max(2, Math.min(clipLen * 0.35, duration / Math.max(2, targetCount)));
+    var maxStart = Math.max(0, duration - Math.min(clipLen, duration));
+    var attempts = 0;
+    while (chosen.length < targetCount && attempts < targetCount * 12) {
+      attempts++;
+      var slot = chosen.length;
+      var fallbackStart = targetCount <= 1 ? 0 : maxStart * (slot / Math.max(1, targetCount - 1));
+      fallbackStart = Math.max(0, Math.min(maxStart, fallbackStart));
+      var alreadyNear = chosen.some(function(item) {
+        return Math.abs(item.start - fallbackStart) < minSpacing;
+      });
+      if (alreadyNear) {
+        fallbackStart = maxStart * (attempts / Math.max(1, targetCount * 12));
+        fallbackStart = Math.max(0, Math.min(maxStart, fallbackStart));
+        alreadyNear = chosen.some(function(item) {
+          return Math.abs(item.start - fallbackStart) < Math.max(1, minSpacing * 0.45);
+        });
+      }
+      if (!alreadyNear) {
+        chosen.push({
+          start: fallbackStart,
+          score: 30,
+          peak: fallbackStart,
+          type: ["TIMELINE CUT"],
+          reason: "Spaced fallback cut — not identified as a semantic AI highlight",
+          recommendedDuration: Math.min(clipLen, Math.max(1, duration - fallbackStart)),
+          features: {},
+          audio: 0,
+          visual: 0,
+          speech: 0,
+          onset: 0,
+          sustain: 0,
+          fallback: true
+        });
+      }
+      if (maxStart <= 0) break;
+    }
+
     if (!chosen.length) {
       setProgress(0);
-      setStatus("No 30+ hooks found — no weak clips added.");
+      setStatus("This video is too short to create clips.");
       renderResults();
       generating = false;
       $("generateBtn").disabled = false;
