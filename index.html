@@ -978,7 +978,7 @@
       html += '<div style="position:absolute;top:8px;left:8px;display:flex;gap:6px">';
       html += '<span style="font-size:10px;padding:2px 8px;border-radius:999px;font-weight:700;' + (c.isReal ? "background:#22D3EE;color:#000" : "background:#f59e0b;color:#000") + '">' + (c.isReal ? "READY" : "CUTTING…") + "</span>";
       html += '<span style="font-size:10px;padding:2px 8px;border-radius:999px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);color:#fff">' + c.startFormatted + "</span></div>";
-      html += '<div style="position:absolute;top:8px;right:8px;font-size:10px;padding:2px 8px;border-radius:999px;background:linear-gradient(90deg,#2563EB,#06B6D4);color:#fff;font-weight:700">' + Math.round(c.score * 100) + " score</div></div>";
+      html += '<div style="position:absolute;top:8px;right:8px;font-size:10px;padding:2px 8px;border-radius:999px;background:linear-gradient(90deg,#2563EB,#06B6D4);color:#fff;font-weight:700">' + Math.round(c.score) + "/100 score</div></div>";
       html += '<div style="padding:12px"><div style="font-weight:700;font-size:13px">' + c.title + "</div>";
       html += '<div style="margin-top:4px;font-size:11px;color:#94a3b8">' + Math.round(c.duration) + "s cut • " + fmtTime(c.start) + " → " + fmtTime(c.start + c.duration) + "</div>";
       if (!c.isReal) {
