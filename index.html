@@ -1018,51 +1018,70 @@
   var backendState = null;
 
   async function getBackendState(){
-    if(backendState) return backendState;
     try{
       var response=await fetch("/api/health",{cache:"no-store"});
       if(!response.ok) throw new Error("backend health "+response.status);
-      backendState=await response.json();
+      var data=await response.json();
+      if(!data || !data.ok || !data.ffmpegAvailable) throw new Error("FFmpeg backend is not ready.");
+      backendState=data;
+      return backendState;
     }catch(e){
-      backendState={backend:false,storageConfigured:false};
+      backendState={backend:false,storageConfigured:false,error:e&&e.message?e.message:"Backend is unreachable"};
+      return backendState;
     }
-    return backendState;
   }
 
   async function uploadSourceToBackend(sourceFile){
     var form=new FormData();
     form.append("video",sourceFile,sourceFile.name||"video.mp4");
     setProgress(8);
-    setStatus("Uploading video to temporary processing storage…",true);
-    var response=await fetch("/api/upload",{method:"POST",body:form});
-    var data={};
-    try{data=await response.json();}catch(e){}
-    if(!response.ok || !data.ok) throw new Error(data.error||"Video upload failed.");
-    setProgress(12);
-    setStatus("Upload complete • preparing FFmpeg clips…",true);
-    return data.sourceRef;
+    setStatus("Uploading video to the processing server…",true);
+    var controller=new AbortController();
+    var timer=setTimeout(function(){controller.abort();},180000);
+    try {
+      var response=await fetch("/api/upload",{method:"POST",body:form,signal:controller.signal});
+      var data={};
+      try{data=await response.json();}catch(e){}
+      if(!response.ok || !data.ok) throw new Error(data.error||("Video upload failed ("+response.status+")."));
+      if(!data.sourceRef) throw new Error("Server received the upload but returned no video reference.");
+      setProgress(12);
+      setStatus("Upload complete • preparing clips…",true);
+      return data.sourceRef;
+    } catch(e) {
+      if(e && e.name==="AbortError") throw new Error("Upload timed out after 3 minutes. Try a smaller video.");
+      throw e;
+    } finally { clearTimeout(timer); }
   }
 
   async function processBackendClip(sourceRef,clip,index,total,caption){
-    var response=await fetch("/api/process",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        source:sourceRef,
-        start:clip.start,
-        duration:clip.duration,
-        index:index,
-        caption:caption||""
-      })
-    });
-    var data={};
-    try{data=await response.json();}catch(e){}
-    if(!response.ok || !data.ok) throw new Error(data.error||("Backend processing failed ("+response.status+")"));
-    return data;
+    var controller=new AbortController();
+    var timer=setTimeout(function(){controller.abort();},300000);
+    try {
+      var response=await fetch("/api/process",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        signal:controller.signal,
+        body:JSON.stringify({
+          source:sourceRef,
+          start:clip.start,
+          duration:clip.duration,
+          index:index,
+          caption:caption||""
+        })
+      });
+      var data={};
+      try{data=await response.json();}catch(e){}
+      if(!response.ok || !data.ok) throw new Error(data.error||("Server failed to render clip "+(index+1)+" ("+response.status+")."));
+      if(!data.url) throw new Error("Server completed clip "+(index+1)+" but returned no download URL.");
+      return data;
+    } catch(e) {
+      if(e && e.name==="AbortError") throw new Error("Clip "+(index+1)+" timed out after 5 minutes. Try a shorter or smaller video.");
+      throw e;
+    } finally { clearTimeout(timer); }
   }
 
   async function runBackendClips(sourceRef,total,caption){
-    var next=0, completed=0, failed=0, concurrency=1;
+    var next=0, completed=0, failed=0, concurrency=2;
     async function worker(){
       while(true){
         var index=next++;
@@ -1230,49 +1249,23 @@
     var failed=0;
 
     try {
-      var backendResult=null;
-      // Prefer the server-side FFmpeg API when Blob storage is configured.
-      // The old Sandbox bootstrap referenced a worker file absent from this repository.
-      setStatus("Checking video-processing backend…",true);
-      try {
-        var backend=await getBackendState();
-        if(backend.backend && backend.ffmpegAvailable) {
-          var sourceRef=await uploadSourceToBackend(file);
-          if(sourceRef) {
-            backendResult=await runBackendClips(sourceRef,total,caption);
-            failed=backendResult.failed;
-          }
-        }
-      } catch(serverError) {
-        console.warn("Server backend unavailable; switching to local FFmpeg:",serverError);
+      setStatus("Connecting to the video-processing server…",true);
+      var backend=await getBackendState();
+      if(!backend.backend || !backend.ffmpegAvailable) {
+        throw new Error("The video-processing server is not responding. Please wait for Render to wake up, reload the page, and try again. Local fallback is disabled because it was causing the cutting screen to hang.");
       }
 
-      // Free fallback: encode actual MP4 files in the browser without server credentials.
-      var pending=clips.map(function(c,i){return {c:c,i:i};}).filter(function(x){return !x.c.isReal;});
-      for(var k=0;k<pending.length;k++){
-        var item=pending[k];
-        try {
-          setStatus("Encoding clip "+(k+1)+"/"+pending.length+" locally with FFmpeg…",true);
-          setProgress(15+Math.round(((k+1)/Math.max(1,pending.length))*80));
-          var rendered=await renderClipFFmpeg(file,item.c.start,item.c.duration,item.i,total,caption);
-          if(!rendered) throw new Error("FFmpeg did not produce a video file. Try a shorter clip or a smaller source video.");
-          item.c.realBlobUrl=rendered;
-          item.c.blobUrl=rendered;
-          item.c.downloadUrl=rendered;
-          item.c.isReal=true;
-        } catch(localError) {
-          failed++;
-          item.c.serverError=localError && localError.message ? localError.message : "Local FFmpeg failed";
-          console.error("Local FFmpeg clip failed:",localError);
-        }
-        renderResults();
-      }
+      var sourceRef=await uploadSourceToBackend(file);
+      var backendResult=await runBackendClips(sourceRef,total,caption);
+      failed=backendResult.failed;
       $("exportBtn").disabled=!clips.some(function(c){return c.isReal;});
-      if(failed===0) {
+      var readyCount=clips.filter(function(c){return c.isReal;}).length;
+      if(failed===0 && readyCount===total) {
         setProgress(100);
-        setStatus("Finished • "+clips.filter(function(c){return c.isReal;}).length+" real MP4 clips ready to download");
+        setStatus("Finished • "+readyCount+" MP4 clips ready to download");
       } else {
-        setStatus("Finished with "+failed+" clip(s) failed. Ready clips can still be downloaded.");
+        setProgress(100);
+        setStatus("Finished with "+failed+" failed. "+readyCount+" clips are ready; failed cards show the reason.");
       }
 
     } catch(error) {
@@ -1301,21 +1294,27 @@
       html += '<div style="position:relative;aspect-ratio:9/16;background:#000">';
       html += '<video src="' + src + '" controls preload="metadata" playsinline style="width:100%;height:100%;object-fit:contain;background:#000"></video>';
       html += '<div style="position:absolute;top:8px;left:8px;display:flex;gap:6px">';
-      html += '<span style="font-size:10px;padding:2px 8px;border-radius:999px;font-weight:700;' + (c.isReal ? "background:#22D3EE;color:#000" : "background:#f59e0b;color:#000") + '">' + (c.isReal ? "READY" : "CUTTING…") + "</span>";
+      var cardState = c.isReal ? "READY" : (c.serverError ? "FAILED" : "QUEUED");
+      var cardColor = c.isReal ? "background:#22D3EE;color:#000" : (c.serverError ? "background:#ef4444;color:#fff" : "background:#64748b;color:#fff");
+      html += '<span style="font-size:10px;padding:2px 8px;border-radius:999px;font-weight:700;' + cardColor + '">' + cardState + "</span>";
       html += '<span style="font-size:10px;padding:2px 8px;border-radius:999px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);color:#fff">' + c.startFormatted + "</span></div>";
       html += '<div style="position:absolute;top:8px;right:8px;font-size:10px;padding:2px 8px;border-radius:999px;background:linear-gradient(90deg,#2563EB,#06B6D4);color:#fff;font-weight:700">' + Math.round(c.score) + "/100 score</div></div>";
       html += '<div style="padding:12px"><div style="font-weight:700;font-size:13px">' + c.title + "</div>";
       html += '<div style="margin-top:4px;font-size:11px;color:#94a3b8">' + Math.round(c.duration) + "s cut • " + fmtTime(c.start) + " → " + fmtTime(c.start + c.duration) + "</div>";
       html += '<div style="margin-top:5px;font-size:10px;color:#67e8f9">' + (c.momentType || "Strong moment") + " • Viral potential " + (c.viralPotential || Math.round(c.score)) + "/100</div>";
       html += '<div style="margin-top:3px;font-size:10px;color:#64748b">' + (c.reason || "Qualified by the editor intelligence engine") + "</div>";
-      if (!c.isReal) {
-        html += '<div style="margin-top:6px;font-size:10px;color:#f59e0b">Still cutting… wait for Generate to finish</div>';
+      if (!c.isReal && c.serverError) {
+        html += '<div style="margin-top:6px;font-size:11px;color:#fca5a5;overflow-wrap:anywhere">' + String(c.serverError).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;") + '</div>';
+      } else if (!c.isReal && generating) {
+        html += '<div style="margin-top:6px;font-size:10px;color:#cbd5e1">Waiting for server render…</div>';
+      } else if (!c.isReal) {
+        html += '<div style="margin-top:6px;font-size:10px;color:#fca5a5">Not rendered. Press Generate to retry.</div>';
       }
       html += '<div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px">';
       if (c.isReal) {
         html += '<button data-dl="' + i + '" data-mode="video" style="height:36px;border-radius:999px;background:#fff;color:#000;font-size:12px;font-weight:700">Download</button>';
       } else {
-        html += '<button disabled style="height:36px;border-radius:999px;background:#1E293B;color:#64748b;font-size:12px;font-weight:700;opacity:.6">Cutting…</button>';
+        html += '<button disabled style="height:36px;border-radius:999px;background:#1E293B;color:#64748b;font-size:12px;font-weight:700;opacity:.6">' + (c.serverError ? "Failed" : "Queued") + '</button>';
       }
       html += '<button data-dl="' + i + '" data-mode="ffmpeg" style="height:36px;border-radius:999px;background:#020617;border:1px solid #1E293B;font-size:12px;font-weight:700;color:#e2e8f0">Download MP4</button>';
       html += "</div></div></div>";
