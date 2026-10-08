@@ -1088,7 +1088,11 @@
       if(!statusResponse.ok || !statusData.ok) throw new Error(statusData.error||"Lost connection to the rendering job.");
       if(statusData.status==="done" && statusData.url) return statusData;
       if(statusData.status==="failed") throw new Error(statusData.error||("FFmpeg failed on clip "+(index+1)+"; try a shorter source or clip length."));
-      setStatus("Rendering clip "+(index+1)+"/"+total+" on server…",true);
+      var elapsed=Date.now()-started;
+      var segmentStart=15+(index/Math.max(1,total))*80;
+      var segmentWidth=80/Math.max(1,total);
+      setProgress(segmentStart+Math.min(segmentWidth*0.9,(elapsed/300000)*segmentWidth*0.9));
+      setStatus("Rendering clip "+(index+1)+"/"+total+" on server… "+Math.min(99,Math.round(elapsed/300000*100))+"% time window",true);
     }
     throw new Error("Clip "+(index+1)+" took longer than 5 minutes. Try a shorter clip length or smaller source video.");
   }
