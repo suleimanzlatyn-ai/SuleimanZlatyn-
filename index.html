@@ -1256,9 +1256,49 @@
 
     try {
       var backendResult=null;
-      setStatus("Starting native FFmpeg backend…",true);
-      backendResult=await runZlatynBackend(total,caption);
-      failed=backendResult.failed;
+      // Prefer the server-side FFmpeg API when Blob storage is configured.
+      // The old Sandbox bootstrap referenced a worker file absent from this repository.
+      setStatus("Checking video-processing backend…",true);
+      try {
+        var backend=await getBackendState();
+        if(backend.backend && backend.storageConfigured && backend.ffmpegAvailable) {
+          var sourceRef=await uploadSourceToBackend(file);
+          if(sourceRef) {
+            backendResult=await runBackendClips(sourceRef,total,caption);
+            failed=backendResult.failed;
+          }
+        }
+      } catch(serverError) {
+        console.warn("Server backend unavailable; switching to local FFmpeg:",serverError);
+      }
+
+      // Free fallback: encode actual MP4 files in the browser without server credentials.
+      var pending=clips.map(function(c,i){return {c:c,i:i};}).filter(function(x){return !x.c.isReal;});
+      for(var k=0;k<pending.length;k++){
+        var item=pending[k];
+        try {
+          setStatus("Encoding clip "+(k+1)+"/"+pending.length+" locally with FFmpeg…",true);
+          setProgress(15+Math.round(((k+1)/Math.max(1,pending.length))*80));
+          var rendered=await renderClipFFmpeg(file,item.c.start,item.c.duration,item.i,total,caption);
+          if(!rendered) throw new Error("FFmpeg did not produce a video file. Try a shorter clip or a smaller source video.");
+          item.c.realBlobUrl=rendered;
+          item.c.blobUrl=rendered;
+          item.c.downloadUrl=rendered;
+          item.c.isReal=true;
+        } catch(localError) {
+          failed++;
+          item.c.serverError=localError && localError.message ? localError.message : "Local FFmpeg failed";
+          console.error("Local FFmpeg clip failed:",localError);
+        }
+        renderResults();
+      }
+      $("exportBtn").disabled=!clips.some(function(c){return c.isReal;});
+      if(failed===0) {
+        setProgress(100);
+        setStatus("Finished • "+clips.filter(function(c){return c.isReal;}).length+" real MP4 clips ready to download");
+      } else {
+        setStatus("Finished with "+failed+" clip(s) failed. Ready clips can still be downloaded.");
+      }
 
     } catch(error) {
       console.error("Generator error:",error);
