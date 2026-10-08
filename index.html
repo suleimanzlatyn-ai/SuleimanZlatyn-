@@ -1092,7 +1092,7 @@
       var segmentStart=15+(index/Math.max(1,total))*80;
       var segmentWidth=80/Math.max(1,total);
       setProgress(segmentStart+Math.min(segmentWidth*0.9,(elapsed/300000)*segmentWidth*0.9));
-      setStatus("Rendering clip "+(index+1)+"/"+total+" on server… "+Math.min(99,Math.round(elapsed/300000*100))+"% time window",true);
+      setStatus("Rendering clip "+(index+1)+"/"+total+" on server… "+Math.ceil(elapsed/1000)+"s elapsed",true);
     }
     throw new Error("Clip "+(index+1)+" took longer than 5 minutes. Try a shorter clip length or smaller source video.");
   }
