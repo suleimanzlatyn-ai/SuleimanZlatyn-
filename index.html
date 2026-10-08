@@ -1019,8 +1019,16 @@
   var backendClientPromise = null;
   // Zlatyn native backend: direct large-file upload to a persistent Vercel Sandbox.
   // This bypasses browser FFmpeg and does not require Vercel Blob.
-  var ZLATYN_SANDBOX_BASE = "https://sb-44khrmytclqx.vercel.run";
+  var ZLATYN_SANDBOX_BASE = "";
   var ZLATYN_SANDBOX_KEY = "zlatyn-backend-2026-10-08-7f4c9b2d";
+  async function ensureNativeBackend(){
+    var response=await fetch("/api/native-backend",{cache:"no-store"});
+    var data=await response.json();
+    if(!response.ok||!data.ok||!data.url) throw new Error(data.error||"Native backend could not start");
+    ZLATYN_SANDBOX_BASE=data.url;
+    return data.url;
+  }
+
 
   async function uploadToZlatynBackend(sourceFile){
     var chunkSize = 8 * 1024 * 1024;
@@ -1041,6 +1049,7 @@
   }
 
   async function runZlatynBackend(total,caption){
+    await ensureNativeBackend();
     await uploadToZlatynBackend(file);
     var payload={caption:caption||"",clips:clips.map(function(c){return {start:c.start,duration:c.duration,score:c.score,title:c.title};})};
     var response=await fetch(ZLATYN_SANDBOX_BASE+"/generate",{method:"POST",headers:{"Content-Type":"application/json","x-zlatyn-key":ZLATYN_SANDBOX_KEY},body:JSON.stringify(payload)});
