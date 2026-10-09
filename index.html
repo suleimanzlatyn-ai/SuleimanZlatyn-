@@ -63,7 +63,7 @@
         <span style="display:block">That Load.</span>
       </h1>
       <p style="margin-top:16px;font-size:17px;line-height:1.625;color:#cbd5e1;max-width:560px">
-        Client-side editor intelligence combines audio energy, speech-like activity, visual changes, hook structure, story development and payoff signals. FFmpeg encodes selected clips locally in sequence. Weak moments are rejected instead of padded.
+        Hook-first editing scans for strong audio, speech-like activity and visual changes, then starts each clip close to the selected moment. The first seconds get a controlled punch-in; optional hook text is styled consistently. Signal analysis helps rank moments, but it does not understand spoken meaning like a transcription model.
       </p>
       <div style="margin-top:28px">
         <a href="#studio" class="btn-grad" style="height:48px;padding:0 24px;border-radius:999px;display:inline-grid;place-items:center;font-weight:700;font-size:15px;color:#fff">Start Clipping — Free</a>
@@ -142,8 +142,8 @@
           </div>
 
           <div style="margin-top:20px;border-radius:12px;background:#020617;border:1px solid #1E293B;padding:12px">
-            <div style="font-size:12px;font-weight:600;color:#22D3EE">Auto-cut on Generate</div>
-            <div class="muted" style="margin-top:4px;font-size:11px">Clips are encoded one at a time with FFmpeg and each FFmpeg input/output file is removed before the next clip starts.</div>
+            <div style="font-size:12px;font-weight:600;color:#22D3EE">Hook-first opening • first 2–4 seconds</div>
+            <div class="muted" style="margin-top:4px;font-size:11px">Each cut starts close to its strongest detected moment. The opening gets a restrained punch-in; optional hook text is yellow with a black outline for the first 3.5 seconds. This is signal-based selection, not speech-understanding AI.</div>
           </div>
 
           <div style="margin-top:24px">
@@ -173,7 +173,7 @@
           <div style="margin-top:24px">
             <label style="font-size:12px;font-weight:500;color:#cbd5e1">Optional caption / hook text</label>
             <input id="captionText" type="text" maxlength="160" placeholder="Optional — leave blank for clean clips" style="margin-top:8px;width:100%;height:40px;border-radius:999px;background:#020617;border:1px solid #1E293B;padding:0 16px;font-size:13px;outline:none;color:#fff">
-            <div class="muted" style="margin-top:5px;font-size:10px">No text is added when this field is empty.</div>
+            <div class="muted" style="margin-top:5px;font-size:10px">Optional hook text only: yellow with black outline, shown during the opening 3.5 seconds. Leave blank for no text.</div>
           </div>
 
           <div style="margin-top:24px;border-radius:14px;background:#020617;border:1px solid #1E293B;padding:12px">
@@ -209,7 +209,7 @@
     <div style="margin-top:32px">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <h3 style="font-weight:700;font-size:14px;letter-spacing:.025em">RESULTS • <span id="resultsCount">0</span> clips</h3>
-        <span class="muted" style="font-size:11px">FFmpeg • 1080×1920 • 9:16 • sequential processing</span>
+        <span class="muted" style="font-size:11px">Hook-first • opening punch-in • FFmpeg • 1080×1920 • 9:16</span>
       </div>
       <div id="resultsGrid" style="margin-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">
         <div class="card" style="padding:32px;text-align:center;grid-column:1/-1">
@@ -222,8 +222,8 @@
   </section>
 
   <footer style="max-width:1240px;margin:24px auto 0;padding:40px 20px;border-top:1px solid #1E293B;font-size:11px;color:#64748b;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between">
-    <span>Zlatyn Clip Studio V3 LITE+ • Editor intelligence • 30+ quality gate • Native backend FFmpeg + local fallback • 1080×1920 MP4</span>
-    <span class="pill" style="padding:4px 8px">Backend + local fallback</span>
+    <span>Zlatyn Clip Studio V3 LITE+ • Hook-first signal analysis • Opening punch-in • Native FFmpeg • 1080×1920 MP4</span>
+    <span class="pill" style="padding:4px 8px">Hook-first editor</span>
   </footer>
 </div>
 
@@ -292,11 +292,11 @@
     $("generateBtn").textContent = "Generate " + clipCount + " Clips • " + clipLen + "s • " + aspect;
   }
 
-  // ---- Viral-hook intelligence (local, no paid AI) ----
-  // The browser cannot honestly "understand" spoken meaning without a speech-to-text/AI model.
-  // Instead, this scorer combines signals that correlate with strong short-form openings:
-  // sudden audio onset, sustained energy, speech activity, visual change, local peaks,
-  // low dead-air, and enough context after the opening. Scores are 0-100.
+  // ---- Hook-first editor intelligence (local, no paid AI) ----
+  // The browser does not transcribe or understand words. It ranks observable signals:
+  // audio onset, speech-like energy, visual change, sustained activity, low dead-air,
+  // and nearby payoff potential. The chosen moment is brought close to the start of
+  // the exported clip so the first 2–4 seconds carry the strongest available hook.
   var MIN_HOOK_SCORE = 30;
 
   function clamp01(v) {
@@ -518,8 +518,9 @@
       var score = Math.round(Math.max(0, Math.min(100, raw)));
       if (score < ZLATYN_EDITOR_KNOWLEDGE.minScore) continue;
 
-      // Adaptive lead: enough setup to make the clip understandable, but never a huge intro.
-      var lead = Math.min(3.2, Math.max(0.8, len * 0.075));
+      // Hook-first lead: keep only a short breath of context before the selected moment.
+      // For a 30-second clip this puts the scored moment about 0.75 seconds after frame one.
+      var lead = Math.min(0.9, Math.max(0.35, len * 0.025));
       var start = Math.max(0, s.t - lead);
       if (start > dur - Math.min(len, dur) - 0.2) continue;
 
@@ -553,10 +554,10 @@
         score:score,
         type:inferMomentType(feature),
         reason:
-          score >= 80 ? "Exceptional attention + development + payoff potential" :
-          score >= 65 ? "Strong hook with sustained viewer-interest signals" :
-          score >= 50 ? "Good hook structure with enough continuation" :
-          "Qualified moment above the 30-point minimum",
+          score >= 80 ? "Hook-first candidate: strong attention + development + payoff signals" :
+          score >= 65 ? "Hook-first candidate: strong opening activity and continuation" :
+          score >= 50 ? "Hook-first candidate: useful opening signal with context" :
+          "Signal-based hook candidate above the minimum threshold",
         recommendedDuration:recommendedDuration,
         features:feature,
         audio:audio[k],
