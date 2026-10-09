@@ -13,7 +13,7 @@
 <section class="hero"><div class="eyebrow">NO AI ANALYSIS. NO EXTRA EDITING.</div><h1>Your timestamps.<br><span style="color:var(--cyan)">Exact cuts.</span></h1><p>Upload the original video, paste the start and end times provided by your AI platform, then let the server cut those moments. Zlatyn does not choose clips or analyse hooks.</p></section>
 <section class="panel"><h2>01 — Upload your original video</h2><p class="sub">Choose one video file. It uploads to the processing server; your phone does not render the clips.</p>
 <label class="drop" for="videoFile"><strong id="fileTitle">＋ Choose video</strong><span id="fileMeta">MP4, MOV, WEBM, MKV or AVI</span></label><input id="videoFile" type="file" accept="video/*,.mkv,.avi,.mov,.mp4,.webm">
-<video id="preview" class="preview" controls playsinline preload="none"></video>
+
 <div class="warning">For reliability, upload one source video at a time. Very large files may exceed the free server's available upload size or storage.</div></section>
 <section class="panel"><h2>02 — Paste the AI timestamps</h2><p class="sub">One clip per line. Zlatyn cuts only the ranges you enter, in the order listed.</p>
 <div class="example">00:01:00 - 00:01:16
@@ -31,7 +31,7 @@
 (function(){
 "use strict";
 const $=id=>document.getElementById(id);
-const fileInput=$("videoFile"), timesInput=$("timestamps"), cutBtn=$("cutBtn"), statusEl=$("status"), progress=$("progress"), results=$("results"), preview=$("preview");
+const fileInput=$("videoFile"), timesInput=$("timestamps"), cutBtn=$("cutBtn"), statusEl=$("status"), progress=$("progress"), results=$("results");
 let sourceFile=null, busy=false, completed=[];
 function setStatus(message,working){statusEl.textContent=message;statusEl.style.borderColor=working?"#28636b":"#26374c";statusEl.style.color=working?"#a9fbf2":"#c6d5ea";}
 function parseTime(value){
@@ -52,7 +52,7 @@ function parseRanges(){
   const start=parseTime(pair[0]),end=parseTime(pair[1]);
   if(!Number.isFinite(start)||!Number.isFinite(end)||start<0||end<=start)throw Error("Line "+(i+1)+": the end time must be after the start time.");
   if(end-start>180)throw Error("Line "+(i+1)+": each clip must be 3 minutes or shorter.");
-  if(sourceFile&&Number.isFinite(preview.duration)&&preview.duration>0&&end>preview.duration+0.25)throw Error("Line "+(i+1)+": end timestamp is beyond the video duration ("+preview.duration.toFixed(1)+" seconds).");
+  
   return {start,end,duration:end-start,index:i};
  });
 }
@@ -63,9 +63,8 @@ function updateReady(){
 fileInput.addEventListener("change",()=>{
  sourceFile=fileInput.files&&fileInput.files[0]||null;
  completed=[];results.innerHTML='<div class="help">No clips created yet.</div>';$("downloadAll").disabled=true;
- if(preview.src)URL.revokeObjectURL(preview.src);
- if(sourceFile){$("fileTitle").textContent=sourceFile.name;$("fileMeta").textContent=(sourceFile.size/1048576).toFixed(1)+" MB • selected";preview.src=URL.createObjectURL(sourceFile);preview.style.display="block";setStatus("Video selected. Add your AI timestamps, then cut.",false);}
- else{$("fileTitle").textContent="＋ Choose video";$("fileMeta").textContent="MP4, MOV, WEBM, MKV or AVI";preview.removeAttribute("src");preview.style.display="none";}
+ if(sourceFile){$("fileTitle").textContent=sourceFile.name;$("fileMeta").textContent=(sourceFile.size/1048576).toFixed(1)+" MB • selected";setStatus("Video selected. Add your AI timestamps, then cut.",false);}
+ else{$("fileTitle").textContent="＋ Choose video";$("fileMeta").textContent="MP4, MOV, WEBM, MKV or AVI";}
  updateReady();
 });
 timesInput.addEventListener("input",updateReady);
