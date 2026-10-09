@@ -21,11 +21,40 @@ await fsp.mkdir(OUTPUTS, { recursive: true });
 app.disable("x-powered-by");
 app.use(express.json({ limit: "2mb" }));
 app.use("/outputs", express.static(OUTPUTS, { maxAge: "1h", setHeaders(res) { res.setHeader("X-Content-Type-Options", "nosniff"); } }));
-app.get("/api/health", (_req, res) => res.json({
-  ok: true, backend: Boolean(ffmpegPath), storageConfigured: Boolean(ffmpegPath),
-  ffmpegAvailable: Boolean(ffmpegPath), access: "public", mode: "render-temporary-disk",
-  message: "Native FFmpeg backend ready. Download clips promptly; files are temporary."
-}));
+let ffmpegHealth = { checkedAt: 0, available: false, error: "FFmpeg has not been checked yet." };
+async function checkFFmpeg() {
+  if (Date.now() - ffmpegHealth.checkedAt < 30000) return ffmpegHealth;
+  ffmpegHealth = await new Promise(resolve => {
+    if (!ffmpegPath || !fs.existsSync(ffmpegPath)) {
+      return resolve({ checkedAt: Date.now(), available: false, error: "FFmpeg binary is missing." });
+    }
+    let settled = false;
+    const finish = value => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve({ checkedAt: Date.now(), ...value });
+    };
+    const child = spawn(ffmpegPath, ["-version"], { stdio: ["ignore", "ignore", "pipe"] });
+    let stderr = "";
+    child.stderr.on("data", chunk => { stderr = (stderr + chunk.toString()).slice(-1000); });
+    const timer = setTimeout(() => { child.kill("SIGKILL"); finish({ available: false, error: "FFmpeg health check timed out." }); }, 5000);
+    child.on("error", err => finish({ available: false, error: err.message || "FFmpeg could not start." }));
+    child.on("close", code => finish({ available: code === 0, error: code === 0 ? null : (stderr || "FFmpeg exited with code " + code) }));
+  });
+  return ffmpegHealth;
+}
+app.get("/api/health", async (_req, res) => {
+  const health = await checkFFmpeg();
+  res.status(health.available ? 200 : 503).json({
+    ok: health.available, backend: true, storageConfigured: true,
+    ffmpegAvailable: health.available, access: "public", mode: "render-temporary-disk",
+    message: health.available
+      ? "FFmpeg was executed successfully. Uploaded videos and clips are temporary; download clips promptly."
+      : "The server is running, but FFmpeg is not ready.",
+    error: health.error || null
+  });
+});
 
 const upload = multer({
   dest: UPLOADS,
@@ -56,9 +85,22 @@ function runFFmpeg(args) {
   return new Promise((resolve, reject) => {
     const child = spawn(ffmpegPath, args, { stdio: ["ignore", "ignore", "pipe"] });
     let stderr = "";
+    let settled = false;
+    const finish = (err) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (err) reject(err); else resolve();
+    };
+    const timer = setTimeout(() => {
+      child.kill("SIGKILL");
+      finish(new Error("FFmpeg exceeded the 9-minute render limit. Try a shorter clip or smaller video."));
+    }, 9 * 60 * 1000);
     child.stderr.on("data", chunk => { stderr += chunk.toString(); if (stderr.length > 10000) stderr = stderr.slice(-10000); });
-    child.on("error", reject);
-    child.on("close", code => code === 0 ? resolve() : reject(new Error(stderr || "FFmpeg exited with code " + code)));
+    child.on("error", err => finish(err));
+    child.on("close", code => code === 0
+      ? finish()
+      : finish(new Error(stderr || "FFmpeg exited with code " + code)));
   });
 }
 function safeText(value) {
@@ -66,6 +108,13 @@ function safeText(value) {
 }
 
 const jobs = new Map();
+function pruneJobs() {
+  const cutoff = Date.now() - 30 * 60 * 1000;
+  for (const [id, job] of jobs) {
+    if (job.status !== "processing" && job.createdAt < cutoff) jobs.delete(id);
+  }
+}
+setInterval(pruneJobs, 5 * 60 * 1000).unref();
 
 app.post("/api/process", async (req, res) => {
   const { source, start, duration, index, caption = "" } = req.body || {};
