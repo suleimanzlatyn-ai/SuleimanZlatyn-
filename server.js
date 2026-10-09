@@ -132,7 +132,7 @@ function pruneJobs() {
 setInterval(pruneJobs, 5 * 60 * 1000).unref();
 
 app.post("/api/process", async (req, res) => {
-  const { source, start, duration, index } = req.body || {};
+  const { source, start, duration, index, forceLandscape = false } = req.body || {};
   const s = Number(start), d = Number(duration);
   if (typeof source !== "string" || !/^[0-9a-f-]{36}$/i.test(source) || !Number.isFinite(s) || !Number.isFinite(d) || s < 0 || d <= 0 || d > 180) {
     return res.status(400).json({ ok: false, error: "Invalid clip request." });
@@ -155,17 +155,23 @@ app.post("/api/process", async (req, res) => {
       // First attempt: stream-copy the source video. This is dramatically faster and
       // keeps the original pixels, audio, resolution, aspect ratio and encoding intact.
       // It creates a clean trim only: no face tracking, crop, zoom, text or overlays.
-      try {
-        await runFFmpeg([
-          "-hide_banner","-loglevel","error","-progress","pipe:1","-nostats",
-          "-ss",String(s),"-i",input,"-t",String(d),
-          "-map","0:v:0","-map","0:a?","-c","copy","-avoid_negative_ts","make_zero",
-          "-movflags","+faststart","-y",output
-        ], progress => { job.progress = progress; }, d);
-      } catch (copyError) {
-        // Some source codecs cannot be placed in MP4 unchanged. Fall back to a fast,
-        // clean 16:9 landscape encode without adding visual effects.
-        await fsp.rm(output, { force: true }).catch(() => {});
+      let copied = false;
+      if (!forceLandscape) {
+        try {
+          await runFFmpeg([
+            "-hide_banner","-loglevel","error","-progress","pipe:1","-nostats",
+            "-ss",String(s),"-i",input,"-t",String(d),
+            "-map","0:v:0","-map","0:a?","-c","copy","-avoid_negative_ts","make_zero",
+            "-movflags","+faststart","-y",output
+          ], progress => { job.progress = progress; }, d);
+          copied = true;
+        } catch (copyError) {
+          await fsp.rm(output, { force: true }).catch(() => {});
+        }
+      }
+      if (!copied) {
+        // Non-landscape sources or incompatible codecs need a fast clean 16:9 encode.
+        // The whole picture is fitted inside the landscape frame; no zoom, captions or overlays.
         await runFFmpeg([
           "-hide_banner","-loglevel","error","-progress","pipe:1","-nostats",
           "-ss",String(s),"-i",input,"-t",String(d),
