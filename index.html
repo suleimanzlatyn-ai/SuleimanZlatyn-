@@ -494,18 +494,23 @@
        *
        * This intentionally avoids rewarding "loudest = best".
        */
-      var attention = clamp01(onset[k] * 0.70 + delta * 0.30);
+      var attention = clamp01(onset[k] * 0.62 + delta * 0.38);
+      // Distinctiveness rewards a moment that stands out from its local context,
+      // rather than a loud but constant background or a random isolated spike.
+      var localBaseline = (prev + futureAvg) / 2;
+      var distinctiveness = clamp01(Math.max(0, now - localBaseline) * 1.8 + delta * 0.30 + onset[k] * 0.20);
       var raw =
-        26 * attention +
-        18 * curiosity +
+        22 * attention +
+        16 * curiosity +
         10 * sustain[k] +
-        10 * payoffPotential +
-        8 * clarity +
-        10 * emotion +
-        7 * speech[k] +
+        11 * payoffPotential +
+        7 * clarity +
+        8 * emotion +
+        6 * speech[k] +
         4 * visual[k] +
         3 * cleanEnding +
-        4 * positionScore;
+        3 * positionScore +
+        10 * distinctiveness;
 
       // Penalties for known short-form failure modes.
       if (deadAir) raw -= 12;
@@ -543,6 +548,7 @@
         futureAvg:futureAvg,
         now:now,
         payoffPotential:payoffPotential,
+        distinctiveness:distinctiveness,
         cleanEnding:cleanEnding
       };
 
@@ -571,11 +577,12 @@
     // Non-max suppression + topic/moment diversity.
     // Never flood the output with five nearly identical moments.
     var picked = [];
+    var diversityGap = Math.max(2.5, Math.min(8, len * 0.45));
     for (var p = 0; p < scored.length; p++) {
       var candidate = scored[p];
       var tooClose = false;
       for (var q = 0; q < picked.length; q++) {
-        if (Math.abs(picked[q].start - candidate.start) < 0.5) {
+        if (Math.abs(picked[q].start - candidate.start) < diversityGap) {
           tooClose = true;
           break;
         }
@@ -704,9 +711,9 @@
             video.pause();
             measure();
             if (onProgress) onProgress(Math.min(99, Math.round((t / dur) * 100)));
-            t += step; step = t < Math.min(8, dur) ? 0.4 : Math.max(1.0, dur / 120);
+            t += step; step = t < Math.min(8, dur) ? 0.4 : Math.max(0.8, dur / 240);
             sampleAt();
-          }, 35);
+          }, 70);
         };
 
         video.addEventListener("seeked", onSeeked);
@@ -1045,7 +1052,7 @@
 
       var separated = true;
       for (var j = 0; j < chosen.length; j++) {
-        if (Math.abs(chosen[j].start - candidateStart) < 0.5) {
+        if (Math.abs(chosen[j].start - candidateStart) < Math.max(2.5, Math.min(8, clipLen * 0.45))) {
           separated = false;
           break;
         }
@@ -1075,7 +1082,7 @@
         var extraLimit = duration > clipLen ? Math.max(0, duration - clipLen - 0.3) : Math.max(0, duration - Math.min(8, duration));
         if (extraStart > extraLimit) continue;
         var duplicate = false;
-        for (var m = 0; m < chosen.length; m++) if (Math.abs(chosen[m].start - extraStart) < 0.05) { duplicate = true; break; }
+        for (var m = 0; m < chosen.length; m++) if (Math.abs(chosen[m].start - extraStart) < 2.5) { duplicate = true; break; }
         if (duplicate) continue;
         chosen.push({start:extraStart,score:Number(extraCandidate.score)||0,peak:extraCandidate.peak||extraStart,type:extraCandidate.type,reason:extraCandidate.reason,recommendedDuration:extraCandidate.recommendedDuration,features:extraCandidate.features,audio:extraCandidate.audio,visual:extraCandidate.visual,speech:extraCandidate.speech,onset:extraCandidate.onset,sustain:extraCandidate.sustain});
       }
