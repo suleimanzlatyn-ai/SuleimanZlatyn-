@@ -1,0 +1,40 @@
+name: Verify Zlatyn Clip Studio
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Check server syntax
+        run: node --check server.js
+      - name: Check browser JavaScript syntax
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          html = Path("index.html").read_text()
+          scripts = re.findall(r"<script(?:\\s[^>]*)?>([\\s\\S]*?)</script>", html, re.I)
+          inline = [s for s in scripts if s.strip()]
+          if not inline:
+              raise SystemExit("No inline JavaScript found in index.html")
+          Path("/tmp/zlatyn-inline.js").write_text(inline[-1])
+          PY
+          node --check /tmp/zlatyn-inline.js
+      - name: Smoke-test real upload, FFmpeg render, and download
+        run: node scripts/smoke-test.mjs
