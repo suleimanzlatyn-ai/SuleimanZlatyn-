@@ -20,7 +20,7 @@
 00:03:42 - 00:04:05
 00:07:10 - 00:07:28</div>
 <label class="field" for="timestamps">Clip start → clip end</label><textarea id="timestamps" spellcheck="false" placeholder="00:01:00 - 00:01:16&#10;00:03:42 - 00:04:05"></textarea>
-<div class="help">Accepted formats: MM:SS or HH:MM:SS. You can also separate times with a comma, a dash, or a space. Maximum 25 clips per job; each clip must be longer than 0 seconds and no longer than 3 minutes.</div>
+<div class="help">Accepted formats: MM:SS or HH:MM:SS. You can also separate times with a comma, a dash, or a space. Maximum 25 clips per job; each clip must be longer than 0 seconds and no longer than 5 minutes.</div>
 <button class="btn primary" id="cutBtn" disabled>Upload and cut my clips</button>
 <div class="status" id="status" role="status" aria-live="polite">Ready when you are. Upload a video and add timestamps.</div><div class="bar"><div id="progress"></div></div>
 </section>
@@ -51,7 +51,7 @@ function parseRanges(){
   if(pair.length!==2)throw Error("Line "+(i+1)+": use START - END, for example 00:01:00 - 00:01:16.");
   const start=parseTime(pair[0]),end=parseTime(pair[1]);
   if(!Number.isFinite(start)||!Number.isFinite(end)||start<0||end<=start)throw Error("Line "+(i+1)+": the end time must be after the start time.");
-  if(end-start>180)throw Error("Line "+(i+1)+": each clip must be 3 minutes or shorter.");
+  if(end-start>300)throw Error("Line "+(i+1)+": each clip must be 5 minutes or shorter.");
   
   return {start,end,duration:end-start,index:i};
  });
@@ -82,7 +82,7 @@ async function upload(){
  finally{clearTimeout(timer);}
 }
 async function renderOne(source,clip){
- const created=await fetchJson("/api/process",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({source,start:clip.start,duration:clip.duration,index:clip.index,forceLandscape:true})});
+ const created=await fetchJson("/api/process",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({source,start:clip.start,duration:clip.duration,index:clip.index})});
  const jobId=created.jobId;if(!jobId)throw Error("Server did not return a processing job ID.");
  const started=Date.now();
  while(Date.now()-started<10*60*1000){
