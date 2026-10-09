@@ -159,7 +159,7 @@ app.post("/api/process", async (req, res) => {
         "-hide_banner","-loglevel","error","-progress","pipe:1","-nostats",
         "-ss",String(s),"-i",input,"-t",String(d),
         "-map","0:v:0","-map","0:a?",
-        "-vf","scale=w='min(1920,iw)':h=-2",
+        "-vf","scale=w='min(1920,iw)':h=-2:force_divisible_by=2",
         "-c:v","libx264","-preset","ultrafast","-crf","23","-threads","2",
         "-c:a","aac","-b:a","128k","-movflags","+faststart","-y",output
       ], progress => { job.progress = progress; }, d);
