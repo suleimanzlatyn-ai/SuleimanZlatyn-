@@ -39,7 +39,7 @@
         <span class="pill" style="padding:2px 8px;font-size:10px;letter-spacing:.1em;color:#94a3b8">V3 LITE+</span>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <span class="pill muted" style="padding:4px 12px;font-size:11px;display:none" id="hdrBadge">AI EDITOR • LOCAL ANALYSIS</span>
+        <span class="pill muted" style="padding:4px 12px;font-size:11px;display:none" id="hdrBadge">HOOK-FIRST • LOCAL SIGNALS</span>
         <a href="#studio" style="padding:0 16px;height:32px;display:grid;place-items:center;border-radius:999px;background:#fff;color:#000;font-size:13px;font-weight:700">Open Studio</a>
       </div>
     </div>
@@ -127,7 +127,7 @@
         <div class="card" style="padding:16px">
           <div style="display:flex;align-items:center;justify-content:space-between">
             <h3 style="font-weight:700;font-size:13px;letter-spacing:.025em">SETTINGS</h3>
-            <span class="muted" style="font-size:11px">Pure JS • fixed peaks</span>
+            <span class="muted" style="font-size:11px">Hook-first • signal scan</span>
           </div>
 
           <div style="margin-top:20px">
@@ -823,7 +823,7 @@
     $("fileMeta").textContent = fmtSize(file.size) + " • " + fmtTime(duration);
     $("generateBtn").disabled = false;
     analyzing = true;
-    setStatus("Teaching the editor the video • hooks + story + payoff + quality rules…", true);
+    setStatus("Scanning for hook moments • detailed opening analysis…", true);
     analyzePeaks(url, duration, clipLen, clipCount * 4, function (p) { setProgress(p); })
       .then(function (list) {
         peaks = list; analyzing = false; setProgress(0);
@@ -1080,7 +1080,7 @@
 
     if (!chosen.length) {
       setProgress(0);
-      setStatus("No strong hook candidates were found. Try another video or re-analyze after reloading.");
+      setStatus("No strong hook candidates were found. Try a longer or more expressive source video.");
       renderResults();
       generating = false;
       $("generateBtn").disabled = false;
