@@ -163,7 +163,7 @@
               <button data-len="60" class="len-btn pill" style="height:32px;padding:0 12px;font-size:12px;font-weight:700;color:#cbd5e1">60s</button>
               <button data-len="90" class="len-btn pill" style="height:32px;padding:0 12px;font-size:12px;font-weight:700;color:#cbd5e1">90s</button>
               <div style="display:flex;align-items:center;gap:4px">
-                <input type="number" id="customLen" min="5" max="180" value="30" style="width:80px;height:32px;border-radius:999px;background:#020617;border:1px solid #1E293B;padding:0 12px;font-size:12px;outline:none;color:#fff">
+                <input type="number" id="customLen" min="5" max="180" value="15" style="width:80px;height:32px;border-radius:999px;background:#020617;border:1px solid #1E293B;padding:0 12px;font-size:12px;outline:none;color:#fff">
                 <span class="muted" style="font-size:11px">sec</span>
               </div>
             </div>
@@ -496,16 +496,16 @@
        */
       var attention = clamp01(onset[k] * 0.70 + delta * 0.30);
       var raw =
-        20 * attention +
-        15 * curiosity +
-        14 * sustain[k] +
-        12 * payoffPotential +
-        10 * clarity +
+        26 * attention +
+        18 * curiosity +
+        10 * sustain[k] +
+        10 * payoffPotential +
+        8 * clarity +
         10 * emotion +
         7 * speech[k] +
-        6 * visual[k] +
-        6 * cleanEnding +
-        5 * positionScore;
+        4 * visual[k] +
+        3 * cleanEnding +
+        4 * positionScore;
 
       // Penalties for known short-form failure modes.
       if (deadAir) raw -= 12;
@@ -706,7 +706,7 @@
             if (onProgress) onProgress(Math.min(99, Math.round((t / dur) * 100)));
             t += step; step = t < Math.min(8, dur) ? 0.4 : Math.max(1.0, dur / 120);
             sampleAt();
-          }, 55);
+          }, 35);
         };
 
         video.addEventListener("seeked", onSeeked);
@@ -820,7 +820,7 @@
     $("generateBtn").disabled = false;
     analyzing = true;
     setStatus("Scanning for hook moments • detailed opening analysis…", true);
-    analyzePeaks(url, duration, clipLen, clipCount * 4, function (p) { setProgress(p); })
+    analyzePeaks(url, duration, clipLen, 200, function (p) { setProgress(p); })
       .then(function (list) {
         peaks = list; analyzing = false; setProgress(0);
             setStatus("Analysis ready • " + fmtTime(duration) + " • " + list.length + " ranked moments");
@@ -1083,8 +1083,7 @@
 
     chosen.sort(function(a,b){ return b.score-a.score; });
 
-    // Quality gate: do not fill the requested count with arbitrary timeline cuts.
-    // Return only distinct, scored hook candidates; fewer strong clips is better than fake hooks.
+    // Use the best distinct scored candidates available; never invent evenly spaced cuts.
 
     if (!chosen.length) {
       setProgress(0);
