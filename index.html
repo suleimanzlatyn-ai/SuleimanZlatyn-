@@ -171,11 +171,7 @@
 
           <div style="margin-top:24px">
             <label style="font-size:12px;font-weight:500;color:#cbd5e1">Output format</label>
-            <div style="margin-top:8px;border:1px solid #1E293B;border-radius:12px;padding:12px;color:#22D3EE;font-size:13px">16:9 landscape • clean cuts • no visual effects</div><div style="display:none" id="aspectBtns">
-              <button data-aspect="9:16" class="aspect-btn" style="height:40px;border-radius:999px;border:none;font-size:12px;font-weight:700;background:linear-gradient(90deg,#2563EB,#06B6D4);color:#fff;box-shadow:0 6px 20px rgba(37,99,235,.35)">9:16</button>
-              <button data-aspect="16:9" class="aspect-btn pill" disabled style="display:none" style="height:40px;font-size:12px;font-weight:700;color:#cbd5e1">16:9</button>
-              <button data-aspect="1:1" class="aspect-btn pill" disabled style="display:none" style="height:40px;font-size:12px;font-weight:700;color:#cbd5e1">1:1</button>
-            </div>
+            <div style="margin-top:8px;border:1px solid #1E293B;border-radius:12px;padding:12px;color:#22D3EE;font-size:13px">16:9 landscape • clean cuts • no visual effects</div>
           </div>
 
           <div style="margin-top:24px;border-radius:14px;background:#020617;border:1px solid #1E293B;padding:12px">
@@ -886,23 +882,10 @@
   });
 
   function setAspect(a) {
-    aspect = a; $("aspectBadge").textContent = a;
-    document.querySelectorAll(".aspect-btn").forEach(function (b) {
-      var active = b.getAttribute("data-aspect") === a;
-      if (active) {
-        b.style.background = "linear-gradient(90deg,#2563EB,#06B6D4)";
-        b.style.color = "#fff"; b.style.border = "none";
-        b.style.boxShadow = "0 6px 20px rgba(37,99,235,.35)";
-      } else {
-        b.style.background = "#020617"; b.style.color = "#cbd5e1";
-        b.style.border = "1px solid #1E293B"; b.style.boxShadow = "none";
-      }
-    });
+    aspect = "16:9"; $("aspectBadge").textContent = "16:9 landscape";
     updateGenLabel();
   }
-  document.querySelectorAll(".aspect-btn").forEach(function (b) {
-    b.addEventListener("click", function () { setAspect(b.getAttribute("data-aspect")); });
-  });
+
 
   var backendState = null;
 
