@@ -27,7 +27,7 @@
     .muted{color:#94a3b8}
     .cyan{color:#22D3EE}
   </style>
-<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+
 </head>
 <body>
 <div id="app">
@@ -746,131 +746,7 @@
     });
   }
 
-  // ---- Client-side FFmpeg clip renderer ----
-  var ffmpegInstance = null;
-  var ffmpegLoadPromise = null;
-  var ffmpegFontPromise = null;
-  var FFmpegCaptionFont = "https://raw.githubusercontent.com/ffmpegwasm/testdata/master/arial.ttf";
-
-  function getFFmpegEngine() {
-    if (ffmpegInstance) return ffmpegInstance;
-    if (!window.FFmpeg || typeof window.FFmpeg.createFFmpeg !== "function") {
-      throw new Error("FFmpeg.wasm is unavailable.");
-    }
-    ffmpegInstance = window.FFmpeg.createFFmpeg({
-      log: false,
-      corePath: "https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js"
-    });
-    ffmpegInstance.setProgress(function (p) {
-      if (!generating || !Number.isFinite(p.ratio)) return;
-      var idx = Number(ffmpegInstance._ndlClipIndex || 0);
-      var total = Number(ffmpegInstance._ndlClipTotal || 1);
-      setProgress(Math.min(99, 15 + ((idx + Math.max(0, Math.min(1, p.ratio))) / total) * 80));
-    });
-    return ffmpegInstance;
-  }
-
-  async function loadFFmpegEngine() {
-    var engine = getFFmpegEngine();
-    if (engine.isLoaded()) return engine;
-    if (!ffmpegLoadPromise) {
-      ffmpegLoadPromise = engine.load().catch(function (e) {
-        ffmpegLoadPromise = null;
-        throw e;
-      });
-    }
-    await ffmpegLoadPromise;
-    return engine;
-  }
-
-  function ffmpegText(value) {
-    return String(value || "")
-      .replace(/\\/g, "\\\\")
-      .replace(/:/g, "\\:")
-      .replace(/'/g, "\\'")
-      .replace(/%/g, "\\%")
-      .replace(/,/g, "\\,")
-      .replace(/\[/g, "\\[")
-      .replace(/\]/g, "\\]");
-  }
-
-  async function ensureCaptionFont(engine, text) {
-    if (!String(text || "").trim()) return false;
-    if (!ffmpegFontPromise) {
-      ffmpegFontPromise = window.FFmpeg.fetchFile(FFmpegCaptionFont)
-        .then(function(data) {
-          engine.FS("writeFile", "zlatyn_caption.ttf", data);
-          return true;
-        })
-        .catch(function(err) {
-          ffmpegFontPromise = null;
-          console.warn("Caption font could not be loaded:", err);
-          return false;
-        });
-    }
-    return await ffmpegFontPromise;
-  }
-
-  function captionFilter(text) {
-    var safe = ffmpegText(text);
-    if (!safe) return "";
-    var font = "/zlatyn_caption.ttf";
-    var top = "drawtext=fontfile=" + font + ":text='" + safe + "':fontcolor=white:fontsize=80:fontweight=bold:borderw=5:bordercolor=black:shadowx=2:shadowy=2:x=(w-text_w)/2:y=120";
-    var bottom = "drawtext=fontfile=" + font + ":text='" + safe + "':fontcolor=white:fontsize=80:fontweight=bold:borderw=5:bordercolor=black:shadowx=2:shadowy=2:x=(w-text_w)/2:y=1620";
-    return top + "," + bottom;
-  }
-
-  async function renderClipFFmpeg(sourceFile, start, dur, clipIndex, totalClips, caption) {
-    var engine = await loadFFmpegEngine();
-    var inputName = "ndl_source_" + Date.now() + "_" + clipIndex + ".mp4";
-    var outputName = "ndl_output_" + Date.now() + "_" + clipIndex + ".mp4";
-
-    try {
-      engine._ndlClipIndex = clipIndex;
-      engine._ndlClipTotal = totalClips;
-
-      engine.FS("writeFile", inputName, await window.FFmpeg.fetchFile(sourceFile));
-
-      var vf = "crop=if(gte(iw/ih\\,9/16)\\,ih*9/16\\,iw):if(gte(iw/ih\\,9/16)\\,ih\\,iw*16/9):(iw-ow)/2:(ih-oh)/2,scale=1080:1920,unsharp=5:5:0.8:3:3:0.4";
-      var cf = "";
-      if (String(caption || "").trim()) {
-        var fontReady = await ensureCaptionFont(engine, caption);
-        if (fontReady) cf = captionFilter(caption);
-      }
-      if (cf) vf += "," + cf;
-
-      await engine.run(
-        "-ss", String(Math.max(0, start)),
-        "-i", inputName,
-        "-t", String(Math.max(0.5, dur)),
-        "-vf", vf,
-        "-af", "loudnorm",
-        "-c:v", "libx264",
-        "-crf", "23",
-        "-preset", "ultrafast",
-        "-c:a", "aac",
-        "-movflags", "+faststart",
-        "-avoid_negative_ts", "make_zero",
-        outputName
-      );
-
-      var data = engine.FS("readFile", outputName);
-      if (!data || !data.length) throw new Error("FFmpeg returned an empty clip.");
-
-      var blob = new Blob([data.buffer], {type:"video/mp4"});
-      var objectUrl = URL.createObjectURL(blob);
-
-      try { engine.FS("unlink", outputName); } catch(e) {}
-      try { engine.FS("unlink", inputName); } catch(e) {}
-
-      return objectUrl;
-    } catch(e) {
-      try { engine.FS("unlink", outputName); } catch(x) {}
-      try { engine.FS("unlink", inputName); } catch(x) {}
-      console.error("FFmpeg clip error:", e);
-      return null;
-    }
-  }
+  // Clip rendering is handled by the native server backend; no browser FFmpeg fallback.
 
   function drawWave() {
     if (!waveCanvas || duration === 0) return;
@@ -1080,7 +956,7 @@
     } finally { clearTimeout(timer); }
 
     var started=Date.now();
-    while(Date.now()-started<300000) {
+    while(Date.now()-started<600000) {
       await new Promise(function(resolve){setTimeout(resolve,2000);});
       var statusResponse=await fetch("/api/jobs/"+encodeURIComponent(jobId),{cache:"no-store"});
       var statusData={};
@@ -1091,10 +967,10 @@
       var elapsed=Date.now()-started;
       var segmentStart=15+(index/Math.max(1,total))*80;
       var segmentWidth=80/Math.max(1,total);
-      setProgress(segmentStart+Math.min(segmentWidth*0.9,(elapsed/300000)*segmentWidth*0.9));
+      setProgress(segmentStart+Math.min(segmentWidth*0.9,(elapsed/600000)*segmentWidth*0.9));
       setStatus("Rendering clip "+(index+1)+"/"+total+" on server… "+Math.ceil(elapsed/1000)+"s elapsed",true);
     }
-    throw new Error("Clip "+(index+1)+" took longer than 5 minutes. Try a shorter clip length or smaller source video.");
+    throw new Error("Clip "+(index+1)+" took longer than 10 minutes. Try a shorter clip length or smaller source video.");
   }
 
   async function runBackendClips(sourceRef,total,caption){
