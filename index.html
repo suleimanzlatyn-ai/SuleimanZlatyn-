@@ -1027,9 +1027,8 @@
     setProgress(5);
     setStatus("Selecting the strongest moments…", true);
 
-    // Prefer scored moments, but do not silently return one clip when the user requested a batch.
-    // The browser-only signal scorer is heuristic, not semantic AI. If it finds too few
-    // strong moments, fill the remaining slots with evenly distributed cuts and label them honestly.
+    // Rank scored moments only. Never invent hooks with evenly spaced fallback cuts.
+    // This is signal-based analysis, not semantic AI or speech transcription.
     var candidates = (peaks || []).filter(function(item){
       return item && Number.isFinite(Number(item.score));
     }).slice();
@@ -1040,7 +1039,12 @@
     for (var i = 0; i < candidates.length && chosen.length < clipCount; i++) {
       var candidate = candidates[i];
       var candidateStart = Math.max(0, Math.min(candidate.start, Math.max(0, duration - 1)));
-      if (candidateStart > duration - Math.min(clipLen, duration) - 0.3) continue;
+      // For sources shorter than the requested clip length, allow a hook with at least
+      // about eight seconds of remaining context instead of rejecting every later moment.
+      var latestStart = duration > clipLen
+        ? Math.max(0, duration - clipLen - 0.3)
+        : Math.max(0, duration - Math.min(8, duration));
+      if (candidateStart > latestStart) continue;
 
       var separated = true;
       for (var j = 0; j < chosen.length; j++) {
@@ -1074,7 +1078,7 @@
 
     if (!chosen.length) {
       setProgress(0);
-      setStatus("This video is too short to create clips.");
+      setStatus("No strong hook candidates were found. Try another video or re-analyze after reloading.");
       renderResults();
       generating = false;
       $("generateBtn").disabled = false;
