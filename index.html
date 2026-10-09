@@ -785,7 +785,9 @@
   }
 
   function loadFile(f) {
-    if (!f || !f.type || f.type.indexOf("video/") !== 0) { setStatus("Not a video file"); return; }
+    var hasVideoMime = !!(f && f.type && f.type.indexOf("video/") === 0);
+    var hasVideoExtension = !!(f && /\.(mp4|mov|m4v|webm|mkv|avi)$/i.test(f.name || ""));
+    if (!f || (!hasVideoMime && !hasVideoExtension)) { setStatus("Choose a video file (MP4, MOV, WEBM, MKV or AVI)."); return; }
     if (url) URL.revokeObjectURL(url);
     for (var i = 0; i < clips.length; i++) {
       if (clips[i].realBlobUrl) URL.revokeObjectURL(clips[i].realBlobUrl);
