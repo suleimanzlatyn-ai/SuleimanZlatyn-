@@ -53,7 +53,7 @@ try {
   const processResponse = await fetch(base + "/api/process", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ source: upload.sourceRef, start: 0, duration: 2, index: 0, caption: "" })
+    body: JSON.stringify({ source: upload.sourceRef, start: 0, duration: 2, index: 0, caption: "HOOK TEST" })
   });
   const jobStart = await processResponse.json();
   if (processResponse.status !== 202 || !jobStart.jobId) throw new Error("Render job did not start: " + JSON.stringify(jobStart));
