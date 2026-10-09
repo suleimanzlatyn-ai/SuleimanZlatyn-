@@ -75,11 +75,31 @@ async function fetchJson(url,options){
 }
 async function upload(){
  const form=new FormData();form.append("video",sourceFile,sourceFile.name);
- setStatus("Uploading original video to the server…",true);
- const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),8*60*1000);
- try{return await fetchJson("/api/upload",{method:"POST",body:form,signal:controller.signal});}
- catch(e){if(e.name==="AbortError")throw Error("Upload timed out. Try a smaller video or a stronger connection.");throw e;}
- finally{clearTimeout(timer);}
+ return await new Promise((resolve,reject)=>{
+  const xhr=new XMLHttpRequest();
+  xhr.open("POST","/api/upload",true);
+  xhr.timeout=15*60*1000;
+  xhr.upload.onprogress=event=>{
+   if(event.lengthComputable){
+    const pct=Math.min(99,Math.round(event.loaded/event.total*100));
+    const loaded=(event.loaded/1048576).toFixed(1);
+    const total=(event.total/1048576).toFixed(1);
+    setStatus("Uploading video to server… "+pct+"% ("+loaded+" / "+total+" MB). Keep this page open.",true);
+    progress.style.width=pct+"%";
+   }else{
+    setStatus("Uploading video to server… "+(sourceFile.size/1048576).toFixed(1)+" MB file. Keep this page open.",true);
+   }
+  };
+  xhr.onload=()=>{
+   let data={};try{data=JSON.parse(xhr.responseText||"{}")}catch{}
+   if(xhr.status>=200&&xhr.status<300&&data.ok!==false)resolve(data);
+   else reject(Error(data.error||("Upload failed ("+xhr.status+"). Please retry; very large files may exceed free-server limits.")));
+  };
+  xhr.onerror=()=>reject(Error("Upload connection interrupted. Check your internet connection and retry."));
+  xhr.ontimeout=()=>reject(Error("Upload timed out after 15 minutes. Try a smaller video or a more stable connection."));
+  xhr.onabort=()=>reject(Error("Upload was cancelled."));
+  xhr.send(form);
+ });
 }
 async function renderOne(source,clip){
  const created=await fetchJson("/api/process",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({source,start:clip.start,duration:clip.duration,index:clip.index})});
@@ -119,6 +139,7 @@ cutBtn.addEventListener("click",async()=>{
   if(!health.ffmpegAvailable)throw Error(health.error||"The server's video cutter is not ready. Try again shortly.");
   const uploadResult=await upload();
   if(!uploadResult.sourceRef)throw Error("Server uploaded the video but did not return its reference.");
+  setStatus("Upload complete. Starting clip 1 of "+ranges.length+"…",true);
   for(let i=0;i<ranges.length;i++){
    const clip=ranges[i];
    setStatus("Preparing clip "+(i+1)+" of "+ranges.length+"…",true);
