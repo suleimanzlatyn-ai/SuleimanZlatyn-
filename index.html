@@ -599,7 +599,9 @@
       video.volume = 0;
 
       var samples = [];
-      var step = Math.max(1.5, dur / 80);
+      // Dense sampling in the opening seconds improves hook timing; coarser sampling
+      // later keeps long-video analysis within a reasonable time on free hosting.
+      var step = 0.4;
       var t = 0, done = false, previousEnergy = 0;
       var canvas = document.createElement("canvas");
       canvas.width = 160;
@@ -706,7 +708,7 @@
             video.pause();
             measure();
             if (onProgress) onProgress(Math.min(99, Math.round((t / dur) * 100)));
-            t += step;
+            t += step; step = t < Math.min(8, dur) ? 0.4 : Math.max(1.0, dur / 120);
             sampleAt();
           }, 100);
         };
@@ -716,7 +718,7 @@
           if (Math.abs(video.currentTime - target) < 0.05) onSeeked();
           else video.currentTime = target;
         } catch (e) {
-          t += step;
+          t += step; step = t < Math.min(8, dur) ? 0.4 : Math.max(1.0, dur / 120);
           sampleAt();
         }
       }
