@@ -32,7 +32,7 @@ async function waitForServer() {
 try {
   const gen = spawn(ffmpegPath, [
     "-hide_banner", "-loglevel", "error",
-    "-f", "lavfi", "-i", "color=c=blue:s=320x480:r=24:d=3",
+    "-f", "lavfi", "-i", "color=c=blue:s=640x360:r=24:d=3",
     "-f", "lavfi", "-i", "sine=frequency=1000:duration=3",
     "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac",
     "-shortest", "-y", tempVideo
@@ -53,7 +53,7 @@ try {
   const processResponse = await fetch(base + "/api/process", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ source: upload.sourceRef, start: 0, duration: 2, index: 0, caption: "HOOK TEST", faceTrack: [{t:0,cx:0.25,cy:0.45},{t:1,cx:0.75,cy:0.45}] })
+    body: JSON.stringify({ source: upload.sourceRef, start: 0, duration: 2, index: 0 })
   });
   const jobStart = await processResponse.json();
   if (processResponse.status !== 202 || !jobStart.jobId) throw new Error("Render job did not start: " + JSON.stringify(jobStart));
