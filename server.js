@@ -155,10 +155,10 @@ app.post("/api/process", async (req, res) => {
     if (!job) return;
     job.status = "processing";
     try {
-      let vf = "crop=if(gte(iw/ih\\,9/16)\\,ih*9/16\\,iw):if(gte(iw/ih\\,9/16)\\,ih\\,iw*16/9):(iw-ow)/2:(ih-oh)/2,scale=1080:1920";
+      let vf = "crop=if(gte(iw/ih\\,9/16)\\,ih*9/16\\,iw):if(gte(iw/ih\\,9/16)\\,ih\\,iw*16/9):(iw-ow)/2:(ih-oh)/2,scale=1080:1920,zoompan=z='if(lte(in,75),1.12,1.0)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=25";
       if (String(caption || "").trim()) {
         const text = safeText(String(caption).trim().slice(0, 180));
-        vf += ",drawtext=text='" + text + "':fontcolor=white:fontsize=64:borderw=4:bordercolor=black:x=(w-text_w)/2:y=h*0.08";
+        vf += ",drawtext=text='" + text + "':fontcolor=yellow:fontsize=64:borderw=5:bordercolor=black:x=(w-text_w)/2:y=h*0.70:enable='lt(t,3.5)'";
       }
       await runFFmpeg(["-hide_banner","-loglevel","error","-progress","pipe:1","-nostats","-ss",String(s),"-i",input,"-t",String(d),"-vf",vf,"-c:v","libx264","-preset","ultrafast","-crf","24","-threads","1","-c:a","aac","-b:a","128k","-movflags","+faststart","-y",output], progress => { job.progress = progress; }, d);
       job.status = "done";
