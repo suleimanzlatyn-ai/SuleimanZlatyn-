@@ -375,6 +375,7 @@
     if (f.futurePeak > 0.72 && f.sustain > 0.58) types.push("RESULT / TRANSFORMATION");
     if (f.onset > 0.58 && f.speech > 0.55 && f.story > 0.55) types.push("MISTAKE / LESSON");
     if (f.speech > 0.65 && f.specificity > 0.58) types.push("NUMBER / SPECIFIC FACT");
+    if (f.distinctiveness > 0.68 && f.onset > 0.56) types.push("SUDDEN TURN / STANDOUT MOMENT");
     if (!types.length) types.push("STRONG MOMENT");
     return types.slice(0, 2);
   }
@@ -481,16 +482,17 @@
 
       /*
        * The 100-point decision model:
-       * 20 attention/hook
-       * 15 curiosity/open loop
-       * 14 sustained development
-       * 12 payoff potential
-       * 10 clarity/context
-       * 10 emotional/visual impact
-       * 7 speech strength
-       * 6 visual change
-       * 6 clean ending
-       * 5 position/context
+       * 22 attention/hook trigger
+       * 16 curiosity/open-loop proxy
+       * 10 sustained development
+       * 11 payoff potential
+       * 7 clarity/context
+       * 8 intensity/emotion proxy
+       * 6 speech-like energy
+       * 4 visual change
+       * 3 clean ending
+       * 3 position/context
+       * 10 local distinctiveness
        *
        * This intentionally avoids rewarding "loudest = best".
        */
