@@ -179,13 +179,13 @@
           <div style="margin-top:24px;border-radius:14px;background:#020617;border:1px solid #1E293B;padding:12px">
             <div style="font-size:11px;font-weight:700;letter-spacing:.025em;color:#cbd5e1">WHAT THIS VERSION FIXES</div>
             <ul style="margin-top:8px;padding-left:16px;font-size:11px;color:#94a3b8;line-height:1.6">
-              <li>Client-side FFmpeg encoding with sequential processing</li>
-              <li>Peaks via video + AnalyserNode seek sampling (works on MP4)</li>
-              <li>FFmpeg input/output files are unlinked after every clip</li>
-              <li>1080×1920 MP4 output with libx264 ultrafast encoding</li>
-              <li>Hook + story-arc intelligence • payoff detection • 30+ hard minimum</li>
-              <li>Moment classification + diversity protection + quality-over-quantity selection</li>
-              <li>Unsharp + loudnorm + burned hook/caption text</li>
+              <li>Scans audio energy, speech-like activity and visual changes for candidate moments</li>
+              <li>Starts each selected clip close to its strongest detected moment</li>
+              <li>Controlled 12% punch-in during the opening three seconds</li>
+              <li>Optional yellow hook text with black outline for the first 3.5 seconds</li>
+              <li>Native server FFmpeg exports 1080×1920 MP4 clips</li>
+              <li>Does not pad batches with random timeline cuts when hook candidates are scarce</li>
+              <li>Signal scoring does not transcribe or understand spoken words</li>
             </ul>
           </div>
 
@@ -1069,46 +1069,8 @@
 
     chosen.sort(function(a,b){ return b.score-a.score; });
 
-    // Fill any shortfall using spaced timeline cuts, as long as the source has enough
-    // footage for distinct start points. These are fallback cuts, not claimed AI discoveries.
-    var targetCount = Math.max(1, clipCount);
-    var minSpacing = Math.max(2, Math.min(clipLen * 0.35, duration / Math.max(2, targetCount)));
-    var maxStart = Math.max(0, duration - Math.min(clipLen, duration));
-    var attempts = 0;
-    while (chosen.length < targetCount && attempts < targetCount * 12) {
-      attempts++;
-      var slot = chosen.length;
-      var fallbackStart = targetCount <= 1 ? 0 : maxStart * (slot / Math.max(1, targetCount - 1));
-      fallbackStart = Math.max(0, Math.min(maxStart, fallbackStart));
-      var alreadyNear = chosen.some(function(item) {
-        return Math.abs(item.start - fallbackStart) < minSpacing;
-      });
-      if (alreadyNear) {
-        fallbackStart = maxStart * (attempts / Math.max(1, targetCount * 12));
-        fallbackStart = Math.max(0, Math.min(maxStart, fallbackStart));
-        alreadyNear = chosen.some(function(item) {
-          return Math.abs(item.start - fallbackStart) < Math.max(1, minSpacing * 0.45);
-        });
-      }
-      if (!alreadyNear) {
-        chosen.push({
-          start: fallbackStart,
-          score: 30,
-          peak: fallbackStart,
-          type: ["TIMELINE CUT"],
-          reason: "Spaced fallback cut — not identified as a semantic AI highlight",
-          recommendedDuration: Math.min(clipLen, Math.max(1, duration - fallbackStart)),
-          features: {},
-          audio: 0,
-          visual: 0,
-          speech: 0,
-          onset: 0,
-          sustain: 0,
-          fallback: true
-        });
-      }
-      if (maxStart <= 0) break;
-    }
+    // Quality gate: do not fill the requested count with arbitrary timeline cuts.
+    // Return only distinct, scored hook candidates; fewer strong clips is better than fake hooks.
 
     if (!chosen.length) {
       setProgress(0);
