@@ -55,7 +55,7 @@
     <div style="position:relative;max-width:1240px;margin:0 auto;padding:56px 20px">
       <div style="display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:999px;background:#0F172A;border:1px solid #1E293B;font-size:11px;color:#cbd5e1">
         <span style="width:8px;height:8px;border-radius:50%;background:#22D3EE;box-shadow:0 0 10px #22D3EE;animation:pulseGlow 2s infinite"></span>
-        REAL MP4 EXPORT • FFmpeg • 9:16 output
+        ORIGINAL VIDEO • 16:9 LANDSCAPE • CLEAN CUTS
       </div>
       <h1 style="margin-top:20px;font-weight:800;line-height:.95;letter-spacing:-.025em;font-size:clamp(36px,6vw,64px)">
         <span style="display:block">One Video.</span>
@@ -63,7 +63,7 @@
         <span style="display:block">That Load.</span>
       </h1>
       <p style="margin-top:16px;font-size:17px;line-height:1.625;color:#cbd5e1;max-width:560px">
-        Hook-first editing ranks moments, then uses face landmarks and mouth movement to estimate which visible person is speaking and follow their face in vertical crops. If face detection is unavailable, it falls back to a centered crop. The model estimates visual speaking activity; it is not perfect speaker recognition.
+        Finds promising hook moments from audio and visual changes, then exports clean landscape clips with no captions, zooms, or overlays. The first 2–3 seconds are prioritized.
       </p>
       <div style="margin-top:28px">
         <a href="#studio" class="btn-grad" style="height:48px;padding:0 24px;border-radius:999px;display:inline-grid;place-items:center;font-weight:700;font-size:15px;color:#fff">Start Clipping — Free</a>
@@ -91,7 +91,7 @@
             <div style="width:48px;height:48px;border-radius:12px;background:#1E293B;border:1px solid #1E3A8A;display:grid;place-items:center;font-size:20px">&#8682;</div>
             <div style="flex:1;min-width:0">
               <div id="fileName" style="font-weight:700;font-size:14px">Drop video or click to upload</div>
-              <div id="fileMeta" class="muted" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">MP4, WebM, MOV • 100% local • no CDN</div>
+              <div id="fileMeta" class="muted" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">MP4, WebM, MOV • clean landscape clips</div>
             </div>
             <span style="height:32px;padding:0 12px;border-radius:999px;background:#fff;color:#000;font-size:12px;font-weight:700;display:grid;place-items:center">Browse</span>
           </div>
@@ -106,7 +106,7 @@
         <div class="card" style="overflow:hidden">
           <div style="padding:12px;display:flex;align-items:center;justify-content:space-between">
             <span style="font-size:12px;font-weight:700;letter-spacing:.025em;color:#cbd5e1">PREVIEW</span>
-            <span id="aspectBadge" class="pill muted" style="padding:2px 8px;font-size:10px">9:16</span>
+            <span id="aspectBadge" class="pill muted" style="padding:2px 8px;font-size:10px">16:9 landscape</span>
           </div>
           <div style="aspect-ratio:16/9;background:#000;position:relative">
             <div id="ytWrap" style="display:none;width:100%;height:100%"></div>
@@ -136,18 +136,18 @@
               <span id="clipCountVal" class="pill" style="padding:2px 8px;font-size:12px">10</span>
             </div>
             <div style="margin-top:8px;display:flex;align-items:center;gap:12px">
-              <input type="range" id="clipCount" min="1" max="100" value="10" style="flex:1;height:4px">
-              <input type="number" id="clipCountNum" min="1" max="100" value="10" style="width:64px;height:36px;border-radius:999px;background:#020617;border:1px solid #1E293B;text-align:center;font-size:13px;outline:none;color:#fff">
+              <input type="range" id="clipCount" min="1" max="50" value="10" style="flex:1;height:4px">
+              <input type="number" id="clipCountNum" min="1" max="50" value="10" style="width:64px;height:36px;border-radius:999px;background:#020617;border:1px solid #1E293B;text-align:center;font-size:13px;outline:none;color:#fff">
             </div>
           </div>
 
           <div style="margin-top:20px;border-radius:12px;background:#020617;border:1px solid #1E293B;padding:12px">
-            <div style="font-size:12px;font-weight:600;color:#22D3EE">Hook-first opening • first 2–4 seconds</div>
-            <div class="muted" style="margin-top:4px;font-size:11px">Each cut starts close to its strongest detected moment. The opening gets a restrained punch-in; optional hook text is yellow with a black outline for the first 3.5 seconds. This is signal-based selection, not speech-understanding AI.</div>
+            <div style="font-size:12px;font-weight:600;color:#22D3EE">Hook-first opening • strongest first 2–3 seconds</div>
+            <div class="muted" style="margin-top:4px;font-size:11px">Ranks candidate moments by a strong opening, audio activity, visual change, and sustained activity. Clips are clean cuts only: no crop, zoom, captions, or overlays. This is signal-based ranking, not language understanding.</div>
           </div>
 
           <div style="margin-top:24px">
-            <label style="font-size:12px;font-weight:500;color:#cbd5e1">Clip length</label>
+            <label style="font-size:12px;font-weight:500;color:#cbd5e1">Minimum clip length (seconds)</label>
             <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px" id="lenBtns">
               <button data-len="15" class="len-btn pill" style="height:32px;padding:0 12px;font-size:12px;font-weight:700;color:#cbd5e1">15s</button>
               <button data-len="30" class="len-btn pill" style="height:32px;padding:0 12px;font-size:12px;font-weight:700;background:#fff;color:#000;border-color:#fff">30s</button>
@@ -162,8 +162,8 @@
           </div>
 
           <div style="margin-top:24px">
-            <label style="font-size:12px;font-weight:500;color:#cbd5e1">Aspect ratio (fixed 9:16 output)</label>
-            <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px" id="aspectBtns">
+            <label style="font-size:12px;font-weight:500;color:#cbd5e1">Output format</label>
+            <div style="margin-top:8px;border:1px solid #1E293B;border-radius:12px;padding:12px;color:#22D3EE;font-size:13px">16:9 landscape • clean cuts • no visual effects</div><div style="display:none" id="aspectBtns">
               <button data-aspect="9:16" class="aspect-btn" style="height:40px;border-radius:999px;border:none;font-size:12px;font-weight:700;background:linear-gradient(90deg,#2563EB,#06B6D4);color:#fff;box-shadow:0 6px 20px rgba(37,99,235,.35)">9:16</button>
               <button data-aspect="16:9" class="aspect-btn pill" disabled style="display:none" style="height:40px;font-size:12px;font-weight:700;color:#cbd5e1">16:9</button>
               <button data-aspect="1:1" class="aspect-btn pill" disabled style="display:none" style="height:40px;font-size:12px;font-weight:700;color:#cbd5e1">1:1</button>
@@ -243,16 +243,15 @@
   function $(id) { return document.getElementById(id); }
 
   var file = null, url = "", duration = 0, peaks = [], clips = [];
-  var clipCount = 10, clipLen = 30, aspect = "9:16";
+  var clipCount = 10, clipLen = 15, aspect = "16:9";
+  var percentStart = 0, percentEnd = 100;
   var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (navigator.deviceMemory && navigator.deviceMemory <= 4);
   // Mobile-safe defaults: fewer clips, shorter default length
   if (isMobile) {
     clipCount = 5;
   }
   var analyzing = false, generating = false, cutting = false;
-  // Normalized, time-stamped face/speaker-centre estimates collected during video analysis.
-  var faceTrackSamples = [];
-  var faceLandmarkerPromise = null;
+  // No face model or tracking: keep analysis fast and output clean.
 
   var videoEl = $("previewVideo");
   var waveCanvas = $("waveCanvas");
@@ -520,7 +519,7 @@
       if (position > 0.985) raw -= 8;
 
       var score = Math.round(Math.max(0, Math.min(100, raw)));
-      if (score < ZLATYN_EDITOR_KNOWLEDGE.minScore) continue;
+      // Keep lower-scoring ranked candidates too when more clips are requested.
 
       // Hook-first lead: keep only a short breath of context before the selected moment.
       // For a 30-second clip this puts the scored moment about 0.75 seconds after frame one.
@@ -581,7 +580,7 @@
       var candidate = scored[p];
       var tooClose = false;
       for (var q = 0; q < picked.length; q++) {
-        if (Math.abs(picked[q].start - candidate.start) < Math.max(5, len * 0.55)) {
+        if (Math.abs(picked[q].start - candidate.start) < 2.0) {
           tooClose = true;
           break;
         }
@@ -603,9 +602,6 @@
       video.volume = 0;
 
       var samples = [];
-      var faceSamples = [];
-      var faceLandmarker = null;
-      var previousFaces = [];
       // Dense sampling in the opening seconds improves hook timing; coarser sampling
       // later keeps long-video analysis within a reasonable time on free hosting.
       var step = 0.4;
@@ -633,10 +629,7 @@
           return;
         }
         cleanup();
-        faceTrackSamples = faceSamples;
         var scored = scoreHookSamples(samples, dur, len);
-        // Hard rule: nothing below 30 can ever enter the results.
-        scored = scored.filter(function(x){ return x.score >= MIN_HOOK_SCORE; });
         scored.sort(function(a,b){ return b.score - a.score; });
         resolve(scored.slice(0, Math.max(maxC, 1)));
       }
@@ -690,38 +683,6 @@
         var onset = clamp01((currentEnergy - previousEnergy) * 4 + currentEnergy * 0.20);
         previousEnergy = currentEnergy;
 
-        // FaceLandmarker supplies face centres and mouth landmarks. Estimate which
-        // visible face is most likely speaking by comparing mouth movement with the
-        // closest face in the previous sample. This is a visual estimate, not diarization.
-        if (faceLandmarker && ctx2d) {
-          try {
-            var detection = faceLandmarker.detect(canvas);
-            var foundFaces = (detection.faceLandmarks || []).map(function(lm) {
-              var xs = lm.map(function(p){ return p.x; });
-              var ys = lm.map(function(p){ return p.y; });
-              var minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs);
-              var minY = Math.min.apply(null, ys), maxY = Math.max.apply(null, ys);
-              var mouth = (lm[13] && lm[14]) ? Math.abs(lm[13].y - lm[14].y) / Math.max(0.001, maxY-minY) : 0;
-              return { cx:(minX+maxX)/2, cy:(minY+maxY)/2, mouth:mouth, area:(maxX-minX)*(maxY-minY) };
-            });
-            var ranked = foundFaces.map(function(face) {
-              var nearest = null, nearestDistance = Infinity;
-              previousFaces.forEach(function(old) {
-                var dist = Math.hypot(face.cx-old.cx, face.cy-old.cy);
-                if (dist < nearestDistance) { nearestDistance=dist; nearest=old; }
-              });
-              face.activity = nearest && nearestDistance < 0.28 ? Math.abs(face.mouth-nearest.mouth) : 0;
-              face.score = face.activity * 3 + face.area * 0.12;
-              return face;
-            });
-            ranked.sort(function(a,b){return b.score-a.score;});
-            var speaker = ranked[0];
-            if (speaker) {
-              faceSamples.push({t:t,cx:speaker.cx,cy:speaker.cy,faceCount:ranked.length,activity:speaker.activity||0});
-            }
-            previousFaces = foundFaces;
-          } catch (e) {}
-        }
         samples.push({
           t: t,
           audio: audioScore,
@@ -750,7 +711,7 @@
             if (onProgress) onProgress(Math.min(99, Math.round((t / dur) * 100)));
             t += step; step = t < Math.min(8, dur) ? 0.4 : Math.max(1.0, dur / 120);
             sampleAt();
-          }, 100);
+          }, 55);
         };
 
         video.addEventListener("seeked", onSeeked);
@@ -781,22 +742,7 @@
             fd = new Uint8Array(analyser.frequencyBinCount);
           }
         } catch (e) {}
-        // Load the free browser-side face landmark model once. If the CDN/model is
-        // unavailable, the normal signal analysis still works and rendering uses centre crop.
-        if (!faceLandmarkerPromise) {
-          faceLandmarkerPromise = import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs")
-            .then(async function(vision) {
-              var files = await vision.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
-              return vision.FaceLandmarker.createFromOptions(files, {
-                baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task", delegate: "CPU" },
-                runningMode: "IMAGE", numFaces: 4
-              });
-            }).catch(function(){ return null; });
-        }
-        faceLandmarkerPromise.then(function(model) {
-          faceLandmarker = model;
-          sampleAt();
-        }).catch(function(){ sampleAt(); });
+        sampleAt();
       });
 
       video.addEventListener("error", function () { finish(); });
@@ -1054,7 +1000,7 @@
   }
 
   async function runBackendClips(sourceRef,total,caption){
-    var next=0, completed=0, failed=0, concurrency=1;
+    var next=0, completed=0, failed=0, concurrency=3;
     async function worker(){
       while(true){
         var index=next++;
