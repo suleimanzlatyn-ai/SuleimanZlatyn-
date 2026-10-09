@@ -63,7 +63,7 @@
         <span style="display:block">That Load.</span>
       </h1>
       <p style="margin-top:16px;font-size:17px;line-height:1.625;color:#cbd5e1;max-width:560px">
-        Hook-first editing scans for strong audio, speech-like activity and visual changes, then starts each clip close to the selected moment. The first seconds get a controlled punch-in; optional hook text is styled consistently. Signal analysis helps rank moments, but it does not understand spoken meaning like a transcription model.
+        Hook-first editing ranks moments, then uses face landmarks and mouth movement to estimate which visible person is speaking and follow their face in vertical crops. If face detection is unavailable, it falls back to a centered crop. The model estimates visual speaking activity; it is not perfect speaker recognition.
       </p>
       <div style="margin-top:28px">
         <a href="#studio" class="btn-grad" style="height:48px;padding:0 24px;border-radius:999px;display:inline-grid;place-items:center;font-weight:700;font-size:15px;color:#fff">Start Clipping — Free</a>
@@ -181,7 +181,8 @@
             <ul style="margin-top:8px;padding-left:16px;font-size:11px;color:#94a3b8;line-height:1.6">
               <li>Scans audio energy, speech-like activity and visual changes for candidate moments</li>
               <li>Starts each selected clip close to its strongest detected moment</li>
-              <li>Controlled 12% punch-in during the opening three seconds</li>
+              <li>Face-aware 9:16 crop that follows the most speech-active visible face when detection is available</li>
+              <li>Automatic centre-crop fallback if face tracking cannot load or find a face</li>
               <li>Optional yellow hook text with black outline for the first 3.5 seconds</li>
               <li>Native server FFmpeg exports 1080×1920 MP4 clips</li>
               <li>Does not pad batches with random timeline cuts when hook candidates are scarce</li>
@@ -249,6 +250,9 @@
     clipCount = 5;
   }
   var analyzing = false, generating = false, cutting = false;
+  // Normalized, time-stamped face/speaker-centre estimates collected during video analysis.
+  var faceTrackSamples = [];
+  var faceLandmarkerPromise = null;
 
   var videoEl = $("previewVideo");
   var waveCanvas = $("waveCanvas");
@@ -599,6 +603,9 @@
       video.volume = 0;
 
       var samples = [];
+      var faceSamples = [];
+      var faceLandmarker = null;
+      var previousFaces = [];
       // Dense sampling in the opening seconds improves hook timing; coarser sampling
       // later keeps long-video analysis within a reasonable time on free hosting.
       var step = 0.4;
@@ -626,6 +633,7 @@
           return;
         }
         cleanup();
+        faceTrackSamples = faceSamples;
         var scored = scoreHookSamples(samples, dur, len);
         // Hard rule: nothing below 30 can ever enter the results.
         scored = scored.filter(function(x){ return x.score >= MIN_HOOK_SCORE; });
@@ -682,6 +690,38 @@
         var onset = clamp01((currentEnergy - previousEnergy) * 4 + currentEnergy * 0.20);
         previousEnergy = currentEnergy;
 
+        // FaceLandmarker supplies face centres and mouth landmarks. Estimate which
+        // visible face is most likely speaking by comparing mouth movement with the
+        // closest face in the previous sample. This is a visual estimate, not diarization.
+        if (faceLandmarker && ctx2d) {
+          try {
+            var detection = faceLandmarker.detect(canvas);
+            var foundFaces = (detection.faceLandmarks || []).map(function(lm) {
+              var xs = lm.map(function(p){ return p.x; });
+              var ys = lm.map(function(p){ return p.y; });
+              var minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs);
+              var minY = Math.min.apply(null, ys), maxY = Math.max.apply(null, ys);
+              var mouth = (lm[13] && lm[14]) ? Math.abs(lm[13].y - lm[14].y) / Math.max(0.001, maxY-minY) : 0;
+              return { cx:(minX+maxX)/2, cy:(minY+maxY)/2, mouth:mouth, area:(maxX-minX)*(maxY-minY) };
+            });
+            var ranked = foundFaces.map(function(face) {
+              var nearest = null, nearestDistance = Infinity;
+              previousFaces.forEach(function(old) {
+                var dist = Math.hypot(face.cx-old.cx, face.cy-old.cy);
+                if (dist < nearestDistance) { nearestDistance=dist; nearest=old; }
+              });
+              face.activity = nearest && nearestDistance < 0.28 ? Math.abs(face.mouth-nearest.mouth) : 0;
+              face.score = face.activity * 3 + face.area * 0.12;
+              return face;
+            });
+            ranked.sort(function(a,b){return b.score-a.score;});
+            var speaker = ranked[0];
+            if (speaker) {
+              faceSamples.push({t:t,cx:speaker.cx,cy:speaker.cy,faceCount:ranked.length,activity:speaker.activity||0});
+            }
+            previousFaces = foundFaces;
+          } catch (e) {}
+        }
         samples.push({
           t: t,
           audio: audioScore,
@@ -741,7 +781,22 @@
             fd = new Uint8Array(analyser.frequencyBinCount);
           }
         } catch (e) {}
-        sampleAt();
+        // Load the free browser-side face landmark model once. If the CDN/model is
+        // unavailable, the normal signal analysis still works and rendering uses centre crop.
+        if (!faceLandmarkerPromise) {
+          faceLandmarkerPromise = import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs")
+            .then(async function(vision) {
+              var files = await vision.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+              return vision.FaceLandmarker.createFromOptions(files, {
+                baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task", delegate: "CPU" },
+                runningMode: "IMAGE", numFaces: 4
+              });
+            }).catch(function(){ return null; });
+        }
+        faceLandmarkerPromise.then(function(model) {
+          faceLandmarker = model;
+          sampleAt();
+        }).catch(function(){ sampleAt(); });
       });
 
       video.addEventListener("error", function () { finish(); });
@@ -795,7 +850,7 @@
     for (var i = 0; i < clips.length; i++) {
       if (clips[i].realBlobUrl) URL.revokeObjectURL(clips[i].realBlobUrl);
     }
-    file = f; url = URL.createObjectURL(f); clips = []; peaks = []; duration = 0;
+    file = f; url = URL.createObjectURL(f); clips = []; peaks = []; faceTrackSamples = []; duration = 0;
     setProgress(0);
     $("ytWrap").style.display = "none"; $("ytWrap").innerHTML = "";
     videoEl.style.display = "block"; $("previewEmpty").style.display = "none";
@@ -958,7 +1013,12 @@
           start:clip.start,
           duration:clip.duration,
           index:index,
-          caption:caption||""
+          caption:caption||"",
+          faceTrack: (faceTrackSamples || []).filter(function(point) {
+            return point && point.t >= clip.start - 0.05 && point.t <= clip.start + clip.duration + 0.05;
+          }).map(function(point) {
+            return { t:Math.max(0,point.t-clip.start), cx:point.cx, cy:point.cy, activity:point.activity||0 };
+          })
         })
       });
       var data={};
