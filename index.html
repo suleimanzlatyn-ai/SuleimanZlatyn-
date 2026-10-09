@@ -598,7 +598,7 @@
       video.volume = 0;
 
       var samples = [];
-      var step = Math.max(1.5, Math.min(2.5, dur / 80));
+      var step = Math.max(1.5, dur / 80);
       var t = 0, done = false, previousEnergy = 0;
       var canvas = document.createElement("canvas");
       canvas.width = 160;
@@ -967,8 +967,13 @@
       var elapsed=Date.now()-started;
       var segmentStart=15+(index/Math.max(1,total))*80;
       var segmentWidth=80/Math.max(1,total);
-      setProgress(segmentStart+Math.min(segmentWidth*0.9,(elapsed/600000)*segmentWidth*0.9));
-      setStatus("Rendering clip "+(index+1)+"/"+total+" on server… "+Math.ceil(elapsed/1000)+"s elapsed",true);
+      var encoderProgress=Number(statusData.progress);
+      var hasEncoderProgress=Number.isFinite(encoderProgress) && encoderProgress>0;
+      var clipProgress=hasEncoderProgress
+        ? Math.min(99,Math.max(0,encoderProgress))/100
+        : Math.min(0.9,(elapsed/600000)*0.9);
+      setProgress(segmentStart+Math.min(segmentWidth*0.99,clipProgress*segmentWidth));
+      setStatus("Rendering clip "+(index+1)+"/"+total+" on server… "+(hasEncoderProgress?Math.round(encoderProgress)+"% encoded • ":"")+Math.ceil(elapsed/1000)+"s elapsed",true);
     }
     throw new Error("Clip "+(index+1)+" took longer than 10 minutes. Try a shorter clip length or smaller source video.");
   }
