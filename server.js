@@ -132,10 +132,10 @@ function pruneJobs() {
 setInterval(pruneJobs, 5 * 60 * 1000).unref();
 
 app.post("/api/process", async (req, res) => {
-  const { source, start, duration, index, forceLandscape = false } = req.body || {};
+  const { source, start, duration, index } = req.body || {};
   const s = Number(start), d = Number(duration);
-  if (typeof source !== "string" || !/^[0-9a-f-]{36}$/i.test(source) || !Number.isFinite(s) || !Number.isFinite(d) || s < 0 || d <= 0 || d > 180) {
-    return res.status(400).json({ ok: false, error: "Invalid clip request." });
+  if (typeof source !== "string" || !/^[0-9a-f-]{36}$/i.test(source) || !Number.isFinite(s) || !Number.isFinite(d) || s < 0 || d <= 0 || d > 300) {
+    return res.status(400).json({ ok: false, error: "Invalid clip request. Each clip must be between 0 and 300 seconds." });
   }
   const matches = (await fsp.readdir(UPLOADS)).filter(name => name.startsWith(source + "."));
   if (!matches.length) return res.status(404).json({ ok: false, error: "The uploaded source expired or was not found. Upload the video again." });
@@ -152,34 +152,17 @@ app.post("/api/process", async (req, res) => {
     if (!job) return;
     job.status = "processing";
     try {
-      // First attempt: stream-copy the source video. This is dramatically faster and
-      // keeps the original pixels, audio, resolution, aspect ratio and encoding intact.
-      // It creates a clean trim only: no face tracking, crop, zoom, text or overlays.
-      let copied = false;
-      if (!forceLandscape) {
-        try {
-          await runFFmpeg([
-            "-hide_banner","-loglevel","error","-progress","pipe:1","-nostats",
-            "-ss",String(s),"-i",input,"-t",String(d),
-            "-map","0:v:0","-map","0:a?","-c","copy","-avoid_negative_ts","make_zero",
-            "-movflags","+faststart","-y",output
-          ], progress => { job.progress = progress; }, d);
-          copied = true;
-        } catch (copyError) {
-          await fsp.rm(output, { force: true }).catch(() => {});
-        }
-      }
-      if (!copied) {
-        // Non-landscape sources or incompatible codecs need a fast clean 16:9 encode.
-        // The whole picture is fitted inside the landscape frame; no zoom, captions or overlays.
-        await runFFmpeg([
-          "-hide_banner","-loglevel","error","-progress","pipe:1","-nostats",
-          "-ss",String(s),"-i",input,"-t",String(d),
-          "-vf","scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,fps=25",
-          "-c:v","libx264","-preset","ultrafast","-crf","24","-threads","2",
-          "-c:a","aac","-b:a","128k","-movflags","+faststart","-y",output
-        ], progress => { job.progress = progress; }, d);
-      }
+      // Accurate timestamp cut: re-encode only the requested segment.
+      // Fast preset, no crop/rotation/overlays, and preserve the source aspect ratio.
+      // Large 4K inputs are capped at 1920px wide; smaller videos keep their dimensions.
+      await runFFmpeg([
+        "-hide_banner","-loglevel","error","-progress","pipe:1","-nostats",
+        "-ss",String(s),"-i",input,"-t",String(d),
+        "-map","0:v:0","-map","0:a?",
+        "-vf","scale=w='min(1920,iw)':h=-2",
+        "-c:v","libx264","-preset","ultrafast","-crf","23","-threads","2",
+        "-c:a","aac","-b:a","128k","-movflags","+faststart","-y",output
+      ], progress => { job.progress = progress; }, d);
       const stat = await fsp.stat(output);
       if (!stat.size) throw new Error("The clip file was empty.");
       job.status = "done";
