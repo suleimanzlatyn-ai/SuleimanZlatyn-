@@ -896,16 +896,26 @@
   var backendState = null;
 
   async function getBackendState(){
+    var controller=new AbortController();
+    var timer=setTimeout(function(){controller.abort();},90000);
     try{
-      var response=await fetch("/api/health",{cache:"no-store"});
-      if(!response.ok) throw new Error("backend health "+response.status);
-      var data=await response.json();
-      if(!data || !data.ok || !data.ffmpegAvailable) throw new Error("FFmpeg backend is not ready.");
+      setStatus("Waking the video server and checking FFmpeg…",true);
+      var response=await fetch("/api/health",{cache:"no-store",signal:controller.signal});
+      var data={};
+      try{data=await response.json();}catch(e){}
+      if(!response.ok || !data || !data.ok || !data.ffmpegAvailable) {
+        throw new Error(data.error || data.message || ("Backend health check failed ("+response.status+")."));
+      }
       backendState=data;
       return backendState;
     }catch(e){
-      backendState={backend:false,storageConfigured:false,error:e&&e.message?e.message:"Backend is unreachable"};
+      var message=e&&e.name==="AbortError"
+        ? "The server did not wake up within 90 seconds. Wait a little and try again."
+        : (e&&e.message?e.message:"Backend is unreachable");
+      backendState={backend:false,storageConfigured:false,error:message};
       return backendState;
+    }finally{
+      clearTimeout(timer);
     }
   }
 
