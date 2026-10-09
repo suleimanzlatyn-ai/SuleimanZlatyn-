@@ -132,7 +132,7 @@ function pruneJobs() {
 setInterval(pruneJobs, 5 * 60 * 1000).unref();
 
 app.post("/api/process", async (req, res) => {
-  const { source, start, duration, index, caption = "", faceTrack = [] } = req.body || {};
+  const { source, start, duration, index } = req.body || {};
   const s = Number(start), d = Number(duration);
   if (typeof source !== "string" || !/^[0-9a-f-]{36}$/i.test(source) || !Number.isFinite(s) || !Number.isFinite(d) || s < 0 || d <= 0 || d > 180) {
     return res.status(400).json({ ok: false, error: "Invalid clip request." });
@@ -145,9 +145,6 @@ app.post("/api/process", async (req, res) => {
   const outputName = "zlatyn-clip-" + (Number.isFinite(Number(index)) ? Number(index) + 1 : 1) + "-" + id + ".mp4";
   const output = path.join(OUTPUTS, outputName);
   jobs.set(id, { status: "queued", createdAt: Date.now(), url: null, error: null, progress: 0 });
-
-  // Respond immediately. Encoding continues in the background so a long FFmpeg run
-  // cannot leave the browser waiting on one HTTP request until the platform times out.
   res.status(202).json({ ok: true, jobId: id });
 
   void (async () => {
@@ -155,36 +152,32 @@ app.post("/api/process", async (req, res) => {
     if (!job) return;
     job.status = "processing";
     try {
-      const track = Array.isArray(faceTrack) ? faceTrack
-        .filter(p => p && Number.isFinite(Number(p.t)) && Number.isFinite(Number(p.cx)) && Number.isFinite(Number(p.cy)))
-        .map(p => ({ t: Math.max(0, Math.min(d, Number(p.t))), cx: Math.max(0, Math.min(1, Number(p.cx))), cy: Math.max(0, Math.min(1, Number(p.cy))) }))
-        .sort((a,b) => a.t-b.t)
-        .filter((p,i,arr) => i === 0 || p.t - arr[i-1].t >= 0.25)
-        .slice(0, 45) : [];
-      function positionExpr(axis) {
-        const key = axis === "x" ? "cx" : "cy";
-        if (!track.length) return axis === "x" ? "iw/2" : "ih/2";
-        const points = track.length === 1 ? [track[0], { ...track[0], t: d + 1 }] : track;
-        let expr = String(points[points.length-1][key]);
-        for (let i = points.length - 2; i >= 0; i--) {
-          const a = points[i], b = points[i+1], delta = Math.max(0.001, b.t-a.t);
-          const linear = "(" + a[key] + "+(" + (b[key]-a[key]) + ")*(t-" + a.t + ")/" + delta + ")";
-          expr = "if(lt(t\\," + b.t + ")\\," + linear + "\\," + expr + ")";
-        }
-        return expr;
+      // First attempt: stream-copy the source video. This is dramatically faster and
+      // keeps the original pixels, audio, resolution, aspect ratio and encoding intact.
+      // It creates a clean trim only: no face tracking, crop, zoom, text or overlays.
+      try {
+        await runFFmpeg([
+          "-hide_banner","-loglevel","error","-progress","pipe:1","-nostats",
+          "-ss",String(s),"-i",input,"-t",String(d),
+          "-map","0:v:0","-map","0:a?","-c","copy","-avoid_negative_ts","make_zero",
+          "-movflags","+faststart","-y",output
+        ], progress => { job.progress = progress; }, d);
+      } catch (copyError) {
+        // Some source codecs cannot be placed in MP4 unchanged. Fall back to a fast,
+        // clean 16:9 landscape encode without adding visual effects.
+        await fsp.rm(output, { force: true }).catch(() => {});
+        await runFFmpeg([
+          "-hide_banner","-loglevel","error","-progress","pipe:1","-nostats",
+          "-ss",String(s),"-i",input,"-t",String(d),
+          "-vf","scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,fps=25",
+          "-c:v","libx264","-preset","ultrafast","-crf","24","-threads","2",
+          "-c:a","aac","-b:a","128k","-movflags","+faststart","-y",output
+        ], progress => { job.progress = progress; }, d);
       }
-      const trackingEnabled = track.length >= 2;
-      const faceX = positionExpr("x"), faceY = positionExpr("y");
-      let vf = trackingEnabled
-        ? "crop=w='min(iw\\,ih*9/16)/1.12':h='min(ih\\,iw*16/9)/1.12':x='max(0\\,min(iw-ow\\,(" + faceX + ")*iw-ow/2))':y='max(0\\,min(ih-oh\\,(" + faceY + ")*ih-oh/2))':eval=frame,scale=1080:1920"
-        : "crop=if(gte(iw/ih\\,9/16)\\,ih*9/16\\,iw):if(gte(iw/ih\\,9/16)\\,ih\\,iw*16/9):(iw-ow)/2:(ih-oh)/2,scale=1080:1920,zoompan=z='if(lte(in,75),1.12,1.0)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=25";
-      vf += ",fps=25";
-      if (String(caption || "").trim()) {
-        const text = safeText(String(caption).trim().slice(0, 180));
-        vf += ",drawtext=text='" + text + "':fontcolor=yellow:fontsize=64:borderw=5:bordercolor=black:x=(w-text_w)/2:y=h*0.70:enable='lt(t,3.5)'";
-      }
-      await runFFmpeg(["-hide_banner","-loglevel","error","-progress","pipe:1","-nostats","-ss",String(s),"-i",input,"-t",String(d),"-vf",vf,"-c:v","libx264","-preset","ultrafast","-crf","24","-threads","1","-c:a","aac","-b:a","128k","-movflags","+faststart","-y",output], progress => { job.progress = progress; }, d);
+      const stat = await fsp.stat(output);
+      if (!stat.size) throw new Error("The clip file was empty.");
       job.status = "done";
+      job.progress = 100;
       job.url = "/outputs/" + outputName;
       job.finishedAt = Date.now();
     } catch (e) {
