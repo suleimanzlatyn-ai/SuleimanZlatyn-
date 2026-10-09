@@ -1091,7 +1091,7 @@
 
     if (!chosen.length) {
       setProgress(0);
-      setStatus("No strong hook candidates were found. Try a longer or more expressive source video.");
+      setStatus("No ranked moments in that range. Widen the range or use a longer source video.");
       renderResults();
       generating = false;
       $("generateBtn").disabled = false;
@@ -1101,7 +1101,7 @@
     chosen.sort(function(a,b){ return a.start-b.start; });
 
     // Build result objects from qualified candidates only.
-    // The selector never pads with weak clips and keeps the creative metadata attached.
+    // Selects from ranked moments and avoids injecting random timeline cuts.
     clips = chosen.map(function(item, idx) {
       var start = Math.max(0, Math.min(item.start, Math.max(0, duration - 1)));
       var requestedDuration = clipLen + (idx % 4);
@@ -1235,7 +1235,7 @@
       setStatus("This clip is not ready yet.");
       return;
     }
-    var name="NDL_clip_"+(clip.id+1)+"_"+Math.round(clip.duration)+"s_9x16.mp4";
+    var name="Zlatyn_clip_"+(clip.id+1)+"_"+Math.round(clip.duration)+"s_16x9.mp4";
     triggerDownload(clip.realBlobUrl,name);
     setStatus("Downloaded clean landscape clip #"+(clip.id+1));
   }
@@ -1257,7 +1257,7 @@
         return;
       }
       var clip=ready[i];
-      var name="NDL_clip_"+(clip.id+1)+"_"+Math.round(clip.duration)+"s_9x16.mp4";
+      var name="Zlatyn_clip_"+(clip.id+1)+"_"+Math.round(clip.duration)+"s_16x9.mp4";
       triggerDownload(clip.realBlobUrl,name);
       setProgress(5+Math.round((i/ready.length)*90));
       setStatus("Downloading "+(i+1)+"/"+ready.length+"…",true);
