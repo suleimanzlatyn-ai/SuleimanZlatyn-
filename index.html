@@ -180,7 +180,7 @@
               <li>Scans audio energy, speech-like activity and visual changes for candidate moments</li>
               <li>Starts each selected clip close to its strongest detected moment</li>
               <li>Clean landscape video cuts, without overlays or effects</li>
-              <li>Does not pad batches with random timeline cuts when hook candidates are scarce</li>
+              <li>Ranks detected moments instead of filling the batch with random cuts</li>
               <li>Signal scoring does not transcribe or understand spoken words</li>
             </ul>
           </div>
@@ -823,13 +823,13 @@
     analyzePeaks(url, duration, clipLen, clipCount * 4, function (p) { setProgress(p); })
       .then(function (list) {
         peaks = list; analyzing = false; setProgress(0);
-            setStatus("Ready • " + fmtTime(duration) + " • " + list.length + " qualified moments • 30+ only");
+            setStatus("Analysis ready • " + fmtTime(duration) + " • " + list.length + " ranked moments");
         updateMeta(); drawWave();
       })
       .catch(function () {
         peaks = [];
         analyzing = false; setProgress(0);
-        setStatus("Analysis could not find reliable 30+ hooks — no weak cuts added.");
+        setStatus("Analysis failed. Try reloading the video and running the scan again.");
         updateMeta(); drawWave();
       });
   });
@@ -950,7 +950,8 @@
           duration:clip.duration,
           index:index,
           caption:caption||"",
-          cleanOutput: true
+          cleanOutput: true,
+          forceLandscape: (videoEl.videoWidth / Math.max(1, videoEl.videoHeight)) < 1.70 || (videoEl.videoWidth / Math.max(1, videoEl.videoHeight)) > 1.80
         })
       });
       var data={};
