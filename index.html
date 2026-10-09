@@ -1,1302 +1,148 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Zlatyn Clip Studio V3 Lite+</title>
-  <style>
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html,body,#app{min-height:100%;background:#020617;color:#fff;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;letter-spacing:-0.01em}
-    body{overflow-x:hidden}
-    button,input{font:inherit;color:inherit}
-    button{cursor:pointer;background:transparent;border:none}
-    video,img{max-width:100%;display:block}
-    a{color:inherit;text-decoration:none}
-    ::-webkit-scrollbar{height:6px;width:6px}
-    ::-webkit-scrollbar-thumb{background:#1E293B;border-radius:999px}
-    .grid-pattern{background-image:linear-gradient(rgba(30,41,59,.3) 1px,transparent 1px),linear-gradient(90deg,rgba(30,41,59,.3) 1px,transparent 1px);background-size:32px 32px}
-    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
-    @keyframes pulseGlow{0%,100%{opacity:.55}50%{opacity:1}}
-    .drag-active{border-style:solid!important;border-color:#3B82F6!important;background:#1E293B!important}
-    .btn-grad{background:linear-gradient(90deg,#2563EB,#06B6D4);box-shadow:0 10px 30px rgba(37,99,235,.35)}
-    .btn-grad:hover{filter:brightness(1.1)}
-    .btn-grad:disabled{opacity:.4;box-shadow:none;filter:none}
-    input[type=range]{accent-color:#22D3EE}
-    .card{background:#0F172A;border:1px solid #1E293B;border-radius:20px}
-    .pill{border-radius:999px;border:1px solid #1E293B;background:#020617}
-    .muted{color:#94a3b8}
-    .cyan{color:#22D3EE}
-  </style>
-
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Zlatyn — Timestamp Video Cutter</title>
+<style>
+:root{color-scheme:dark;--bg:#070b14;--panel:#101827;--line:#243247;--muted:#9aaac0;--cyan:#52e0e9;--blue:#477bff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0,#102348 0,transparent 42%),var(--bg);color:#f4f7fb;font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}button,input,textarea{font:inherit}button{cursor:pointer;border:0}.wrap{max-width:920px;margin:auto;padding:24px 16px 60px}.brand{display:flex;align-items:center;gap:11px;font-weight:850;letter-spacing:.06em}.logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--blue),var(--cyan));display:grid;place-items:center;color:#04101a;font-size:20px}.tag{color:var(--cyan);font-size:11px;border:1px solid #23505b;border-radius:999px;padding:4px 9px;margin-left:auto}.hero{padding:38px 0 24px}.eyebrow{color:var(--cyan);font-size:12px;font-weight:800;letter-spacing:.14em}.hero h1{font-size:clamp(34px,8vw,54px);line-height:1.03;letter-spacing:-.045em;margin:12px 0}.hero p{max-width:620px;color:#b5c3d7;margin:0}.panel{background:rgba(16,24,39,.94);border:1px solid var(--line);border-radius:20px;padding:20px;margin:14px 0;box-shadow:0 18px 55px #0002}.panel h2{font-size:16px;margin:0 0 5px}.sub{color:var(--muted);font-size:13px;margin:0 0 17px}.drop{display:block;border:1.5px dashed #3d638d;border-radius:15px;padding:20px;text-align:center;background:#0a1322;cursor:pointer}.drop strong{display:block;font-size:15px}.drop span{display:block;color:var(--muted);font-size:12px;margin-top:5px;overflow-wrap:anywhere}input[type=file]{position:absolute;left:-9999px}.preview{width:100%;max-height:360px;background:#000;border-radius:12px;margin-top:14px;display:none}.field{display:block;font-size:13px;font-weight:700;margin:17px 0 7px}textarea,input[type=text]{width:100%;border:1px solid #34445c;background:#080e19;color:#f4f7fb;border-radius:12px;padding:13px;outline:none}textarea:focus,input:focus{border-color:var(--cyan)}textarea{min-height:150px;resize:vertical;font:14px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace} .help{font-size:12px;color:var(--muted);margin-top:7px}.example{background:#09111f;border:1px solid #233248;border-radius:10px;padding:10px 12px;font:12px/1.7 ui-monospace,monospace;color:#c6d5ea;white-space:pre-wrap}.btn{min-height:46px;border-radius:12px;padding:12px 17px;font-weight:800}.primary{background:linear-gradient(100deg,#477bff,#42d6df);color:#06101d;width:100%;margin-top:18px}.secondary{background:#1a2940;color:#f5f7fb;border:1px solid #34445c}.btn:disabled{opacity:.45;cursor:not-allowed}.status{margin-top:14px;background:#080e19;border:1px solid #26374c;border-radius:12px;padding:12px;font-size:13px;color:#c6d5ea;overflow-wrap:anywhere}.bar{height:6px;background:#1c2a3d;border-radius:99px;margin-top:10px;overflow:hidden}.bar>div{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--cyan));transition:width .2s}.results{display:grid;gap:10px;margin-top:14px}.result{display:flex;align-items:center;gap:12px;border:1px solid var(--line);background:#0a1220;border-radius:12px;padding:12px}.result .info{flex:1;min-width:0}.result strong{display:block}.result small{color:var(--muted)}.download{background:#f2f7ff;color:#07101d;padding:9px 12px;border-radius:9px;font-size:12px;font-weight:800;white-space:nowrap}.foot{font-size:12px;color:#8494aa;text-align:center;padding:18px 0}.warning{font-size:12px;color:#aebbd0;margin-top:10px}@media(min-width:700px){.panel{padding:24px}.hero{padding-top:50px}}
+</style>
 </head>
-<body>
-<div id="app">
-  <header style="position:sticky;top:0;z-index:50;backdrop-filter:blur(24px);background:rgba(2,6,23,.8);border-bottom:1px solid #1E293B">
-    <div style="max-width:1240px;margin:0 auto;padding:0 20px;height:60px;display:flex;align-items:center;justify-content:space-between">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#2563EB,#06B6D4);display:grid;place-items:center;font-weight:800;font-size:13px;box-shadow:0 0 20px rgba(37,99,235,.4)">Z</div>
-        <span style="font-weight:800;letter-spacing:-.025em;font-size:15px">ZLATYN <span class="cyan">CLIP</span> STUDIO</span>
-        <span class="pill" style="padding:2px 8px;font-size:10px;letter-spacing:.1em;color:#94a3b8">V3 LITE+</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span class="pill muted" style="padding:4px 12px;font-size:11px;display:none" id="hdrBadge">HOOK-FIRST • LOCAL SIGNALS</span>
-        <a href="#studio" style="padding:0 16px;height:32px;display:grid;place-items:center;border-radius:999px;background:#fff;color:#000;font-size:13px;font-weight:700">Open Studio</a>
-      </div>
-    </div>
-  </header>
-
-  <section style="position:relative;overflow:hidden">
-    <div style="position:absolute;inset:0;overflow:hidden">
-      <div class="grid-pattern" style="position:absolute;inset:0;opacity:.35"></div>
-      <div style="position:absolute;top:-96px;left:-96px;width:360px;height:360px;border-radius:50%;filter:blur(60px);opacity:.55;background:radial-gradient(circle at 30% 30%,#2563EB,transparent 60%);animation:float 8s ease-in-out infinite"></div>
-      <div style="position:absolute;top:10%;right:-40px;width:320px;height:320px;border-radius:50%;filter:blur(60px);opacity:.45;background:radial-gradient(circle at 50% 50%,#06B6D4,transparent 65%);animation:float 9s ease-in-out infinite 1s"></div>
-      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent,rgba(2,6,23,.4),#020617)"></div>
-    </div>
-    <div style="position:relative;max-width:1240px;margin:0 auto;padding:56px 20px">
-      <div style="display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:999px;background:#0F172A;border:1px solid #1E293B;font-size:11px;color:#cbd5e1">
-        <span style="width:8px;height:8px;border-radius:50%;background:#22D3EE;box-shadow:0 0 10px #22D3EE;animation:pulseGlow 2s infinite"></span>
-        ORIGINAL VIDEO • 16:9 LANDSCAPE • CLEAN CUTS
-      </div>
-      <h1 style="margin-top:20px;font-weight:800;line-height:.95;letter-spacing:-.025em;font-size:clamp(36px,6vw,64px)">
-        <span style="display:block">One Video.</span>
-        <span style="display:block;background:linear-gradient(90deg,#2563EB,#06B6D4);-webkit-background-clip:text;background-clip:text;color:transparent">Viral Clips.</span>
-        <span style="display:block">That Load.</span>
-      </h1>
-      <p style="margin-top:16px;font-size:17px;line-height:1.625;color:#cbd5e1;max-width:560px">
-        Finds promising hook moments from audio and visual changes, then exports clean landscape clips with no captions, zooms, or overlays. The first 2–3 seconds are prioritized.
-      </p>
-      <div style="margin-top:28px">
-        <a href="#studio" class="btn-grad" style="height:48px;padding:0 24px;border-radius:999px;display:inline-grid;place-items:center;font-weight:700;font-size:15px;color:#fff">Start Clipping — Free</a>
-      </div>
-    </div>
-  </section>
-
-  <section id="studio" style="max-width:1240px;margin:0 auto;padding:0 20px 40px">
-    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px">
-      <h2 style="font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px">
-        <span style="width:28px;height:28px;border-radius:8px;background:#0F172A;border:1px solid #1E293B;display:grid;place-items:center">&#9999;</span>
-        Studio
-        <span class="pill muted" style="padding:2px 8px;font-size:11px">FFMPEG ENGINE</span>
-      </h2>
-      <div style="font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:8px">
-        <span id="statusPill" class="pill" style="padding:4px 10px">Idle</span>
-        <span id="metaPill" class="pill" style="padding:4px 10px;display:none"></span>
-      </div>
-    </div>
-
-    <div style="display:grid;gap:16px;grid-template-columns:1fr" id="studioGrid">
-      <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
-        <div id="dropZone" class="card" style="border:2px dashed #1E3A8A;padding:20px;cursor:pointer;transition:.15s">
-          <div style="display:flex;align-items:center;gap:16px">
-            <div style="width:48px;height:48px;border-radius:12px;background:#1E293B;border:1px solid #1E3A8A;display:grid;place-items:center;font-size:20px">&#8682;</div>
-            <div style="flex:1;min-width:0">
-              <div id="fileName" style="font-weight:700;font-size:14px">Drop video or click to upload</div>
-              <div id="fileMeta" class="muted" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">MP4, WebM, MOV • clean landscape clips</div>
-            </div>
-            <span style="height:32px;padding:0 12px;border-radius:999px;background:#fff;color:#000;font-size:12px;font-weight:700;display:grid;place-items:center">Browse</span>
-          </div>
-          <input type="file" id="fileInput" accept="video/*" hidden>
-        </div>
-
-        <div class="card" style="padding:12px;display:flex;gap:8px;border-radius:16px">
-          <input id="linkInput" type="text" placeholder="YouTube or mp4 link (preview only)" style="flex:1;min-width:0;height:40px;border-radius:999px;background:#020617;border:1px solid #1E293B;padding:0 16px;font-size:13px;outline:none;color:#fff">
-          <button id="loadLinkBtn" style="height:40px;padding:0 16px;border-radius:999px;background:#1E293B;border:1px solid #1E293B;font-size:13px;font-weight:700">Load</button>
-        </div>
-
-        <div class="card" style="overflow:hidden">
-          <div style="padding:12px;display:flex;align-items:center;justify-content:space-between">
-            <span style="font-size:12px;font-weight:700;letter-spacing:.025em;color:#cbd5e1">PREVIEW</span>
-            <span id="aspectBadge" class="pill muted" style="padding:2px 8px;font-size:10px">16:9 landscape</span>
-          </div>
-          <div style="aspect-ratio:16/9;background:#000;position:relative">
-            <div id="ytWrap" style="display:none;width:100%;height:100%"></div>
-            <video id="previewVideo" controls playsinline style="width:100%;height:100%;object-fit:contain;background:#000;display:none"></video>
-            <div id="previewEmpty" style="position:absolute;inset:0;display:grid;place-items:center;color:#64748b;font-size:13px">Upload a video to preview</div>
-          </div>
-          <div style="padding:12px;background:rgba(2,6,23,.6)">
-            <canvas id="waveCanvas" style="width:100%;height:40px;border-radius:8px;border:1px solid #1E293B;background:#0F172A;display:block"></canvas>
-            <div style="margin-top:8px;display:flex;justify-content:space-between;font-size:11px;color:#94a3b8">
-              <span>Cyan/blue = energy peaks (AnalyserNode seek sampling)</span>
-              <span id="peakCount">—</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
-        <div class="card" style="padding:16px">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <h3 style="font-weight:700;font-size:13px;letter-spacing:.025em">SETTINGS</h3>
-            <span class="muted" style="font-size:11px">Hook-first • signal scan</span>
-          </div>
-
-          <div style="margin-top:20px">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <label style="font-size:12px;font-weight:500;color:#cbd5e1">Number of clips</label>
-              <span id="clipCountVal" class="pill" style="padding:2px 8px;font-size:12px">10</span>
-            </div>
-            <div style="margin-top:8px;display:flex;align-items:center;gap:12px">
-              <input type="range" id="clipCount" min="1" max="25" value="10" style="flex:1;height:4px">
-              <input type="number" id="clipCountNum" min="1" max="25" value="10" style="width:64px;height:36px;border-radius:999px;background:#020617;border:1px solid #1E293B;text-align:center;font-size:13px;outline:none;color:#fff">
-            </div>
-          </div>
-
-          <div style="margin-top:20px;border-radius:12px;background:#020617;border:1px solid #1E293B;padding:12px">
-            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px"><label for="percentStart">Search source from</label><strong id="percentStartVal">0%</strong></div>
-            <input id="percentStart" type="range" min="0" max="95" value="0" style="margin-top:8px;width:100%">
-            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-top:12px"><label for="percentEnd">Search source to</label><strong id="percentEndVal">100%</strong></div>
-            <input id="percentEnd" type="range" min="5" max="100" value="100" style="margin-top:8px;width:100%">
-            <div class="muted" style="font-size:10px;margin-top:6px">Choose the part of the source video where hooks should be selected.</div>
-          </div>
-
-          <div style="margin-top:20px;border-radius:12px;background:#020617;border:1px solid #1E293B;padding:12px">
-            <div style="font-size:12px;font-weight:600;color:#22D3EE">Hook-first opening • strongest first 2–3 seconds</div>
-            <div class="muted" style="margin-top:4px;font-size:11px">Ranks candidate moments by a strong opening, audio activity, visual change, and sustained activity. Clips are clean cuts only: no crop, zoom, captions, or overlays. This is signal-based ranking, not language understanding.</div>
-          </div>
-
-          <div style="margin-top:24px">
-            <label style="font-size:12px;font-weight:500;color:#cbd5e1">Minimum clip length (seconds)</label>
-            <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px" id="lenBtns">
-              <button data-len="15" class="len-btn pill" style="height:32px;padding:0 12px;font-size:12px;font-weight:700;background:#fff;color:#000;border-color:#fff">15s minimum</button>
-              <button data-len="30" class="len-btn pill" style="height:32px;padding:0 12px;font-size:12px;font-weight:700;color:#cbd5e1">30s minimum</button>
-              <button data-len="45" class="len-btn pill" style="height:32px;padding:0 12px;font-size:12px;font-weight:700;color:#cbd5e1">45s</button>
-              <button data-len="60" class="len-btn pill" style="height:32px;padding:0 12px;font-size:12px;font-weight:700;color:#cbd5e1">60s</button>
-              <button data-len="90" class="len-btn pill" style="height:32px;padding:0 12px;font-size:12px;font-weight:700;color:#cbd5e1">90s</button>
-              <div style="display:flex;align-items:center;gap:4px">
-                <input type="number" id="customLen" min="5" max="180" value="15" style="width:80px;height:32px;border-radius:999px;background:#020617;border:1px solid #1E293B;padding:0 12px;font-size:12px;outline:none;color:#fff">
-                <span class="muted" style="font-size:11px">sec</span>
-              </div>
-            </div>
-          </div>
-
-          <div style="margin-top:24px">
-            <label style="font-size:12px;font-weight:500;color:#cbd5e1">Output format</label>
-            <div style="margin-top:8px;border:1px solid #1E293B;border-radius:12px;padding:12px;color:#22D3EE;font-size:13px">16:9 landscape • clean cuts • no visual effects</div>
-          </div>
-
-          <div style="margin-top:24px;border-radius:14px;background:#020617;border:1px solid #1E293B;padding:12px">
-            <div style="font-size:11px;font-weight:700;letter-spacing:.025em;color:#cbd5e1">HOOK SELECTION</div>
-            <ul style="margin-top:8px;padding-left:16px;font-size:11px;color:#94a3b8;line-height:1.6">
-              <li>Scans audio energy, speech-like activity and visual changes for candidate moments</li>
-              <li>Starts each selected clip close to its strongest detected moment</li>
-              <li>Clean landscape video cuts, without overlays or effects</li>
-              <li>Ranks detected moments instead of filling the batch with random cuts</li>
-              <li>Signal scoring does not transcribe or understand spoken words</li>
-            </ul>
-          </div>
-
-          <button id="generateBtn" class="btn-grad" disabled style="margin-top:20px;width:100%;height:48px;border-radius:999px;font-weight:800;font-size:14px;letter-spacing:.025em;color:#fff">Generate Clips</button>
-          <div style="margin-top:12px;height:8px;border-radius:999px;background:#020617;border:1px solid #1E293B;overflow:hidden">
-            <div id="progressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#2563EB,#22D3EE);transition:width .2s"></div>
-          </div>
-          <canvas id="timelineCanvas" style="margin-top:12px;width:100%;height:30px;border-radius:8px;border:1px solid #1E293B;background:#020617;display:block"></canvas>
-        </div>
-
-        <div class="card" style="padding:12px;border-radius:16px;display:flex;align-items:center;justify-content:space-between">
-          <div style="font-size:12px">
-            <div style="font-weight:700">Download All Clips</div>
-            <div class="muted" style="font-size:11px">Downloads all pre-cut short clips at once</div>
-          </div>
-          <button id="exportBtn" disabled style="height:36px;padding:0 16px;border-radius:999px;background:#fff;color:#000;font-size:12px;font-weight:700;opacity:.4">Download All</button>
-        </div>
-      </div>
-    </div>
-
-    <div style="margin-top:32px">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <h3 style="font-weight:700;font-size:14px;letter-spacing:.025em">RESULTS • <span id="resultsCount">0</span> clips</h3>
-        <span class="muted" style="font-size:11px">Hook-first ranking • clean landscape cuts • FFmpeg</span>
-      </div>
-      <div id="resultsGrid" style="margin-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">
-        <div class="card" style="padding:32px;text-align:center;grid-column:1/-1">
-          <div style="margin:0 auto;width:48px;height:48px;border-radius:50%;background:#020617;border:1px solid #1E293B;display:grid;place-items:center">&#127909;</div>
-          <div style="margin-top:12px;font-weight:700;font-size:14px">No clips yet</div>
-          <div class="muted" style="font-size:12px;margin-top:4px">Upload → wait for peak analysis → Generate</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <footer style="max-width:1240px;margin:24px auto 0;padding:40px 20px;border-top:1px solid #1E293B;font-size:11px;color:#64748b;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between">
-    <span>Zlatyn Clip Studio • Hook-first ranking • Clean landscape clips • No effects</span>
-    <span class="pill" style="padding:4px 8px">Hook-first editor</span>
-  </footer>
-</div>
-
+<body><main class="wrap">
+<header class="brand"><div class="logo">Z</div><div>ZLATYN <span style="color:var(--cyan)">CUT</span></div><span class="tag">TIMESTAMP MODE</span></header>
+<section class="hero"><div class="eyebrow">NO AI ANALYSIS. NO EXTRA EDITING.</div><h1>Your timestamps.<br><span style="color:var(--cyan)">Exact cuts.</span></h1><p>Upload the original video, paste the start and end times provided by your AI platform, then let the server cut those moments. Zlatyn does not choose clips or analyse hooks.</p></section>
+<section class="panel"><h2>01 — Upload your original video</h2><p class="sub">Choose one video file. It uploads to the processing server; your phone does not render the clips.</p>
+<label class="drop" for="videoFile"><strong id="fileTitle">＋ Choose video</strong><span id="fileMeta">MP4, MOV, WEBM, MKV or AVI</span></label><input id="videoFile" type="file" accept="video/*,.mkv,.avi,.mov,.mp4,.webm">
+<video id="preview" class="preview" controls playsinline preload="none"></video>
+<div class="warning">For reliability, upload one source video at a time. Very large files may exceed the free server's available upload size or storage.</div></section>
+<section class="panel"><h2>02 — Paste the AI timestamps</h2><p class="sub">One clip per line. Zlatyn cuts only the ranges you enter, in the order listed.</p>
+<div class="example">00:01:00 - 00:01:16
+00:03:42 - 00:04:05
+00:07:10 - 00:07:28</div>
+<label class="field" for="timestamps">Clip start → clip end</label><textarea id="timestamps" spellcheck="false" placeholder="00:01:00 - 00:01:16&#10;00:03:42 - 00:04:05"></textarea>
+<div class="help">Accepted formats: MM:SS or HH:MM:SS. You can also separate times with a comma, a dash, or a space. Maximum 25 clips per job; each clip must be longer than 0 seconds and no longer than 3 minutes.</div>
+<button class="btn primary" id="cutBtn" disabled>Upload and cut my clips</button>
+<div class="status" id="status" role="status" aria-live="polite">Ready when you are. Upload a video and add timestamps.</div><div class="bar"><div id="progress"></div></div>
+</section>
+<section class="panel"><h2>03 — Download your clips</h2><p class="sub">Finished clips appear here as each one completes. You can download them individually.</p><button id="downloadAll" class="btn secondary" disabled>Download all clips one by one</button><div id="results" class="results"><div class="help">No clips created yet.</div></div></section>
+<footer class="foot">Zlatyn Timestamp Cutter • Clean cuts • Original audio • No captions, effects, crops, or hook detection</footer>
+</main>
 <script>
-(function () {
-  "use strict";
-
-  function fmtTime(s) {
-    var m = Math.floor(s / 60);
-    var sec = Math.floor(s % 60);
-    return m + ":" + String(sec).padStart(2, "0");
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const fileInput=$("videoFile"), timesInput=$("timestamps"), cutBtn=$("cutBtn"), statusEl=$("status"), progress=$("progress"), results=$("results"), preview=$("preview");
+let sourceFile=null, busy=false, completed=[];
+function setStatus(message,working){statusEl.textContent=message;statusEl.style.borderColor=working?"#28636b":"#26374c";statusEl.style.color=working?"#a9fbf2":"#c6d5ea";}
+function parseTime(value){
+  const s=value.trim(); if(!s)return NaN;
+  if(/^\d+(\.\d+)?$/.test(s))return Number(s);
+  const parts=s.split(":"); if(parts.length<2||parts.length>3||parts.some(p=>p.trim()===""||!/^\d+(\.\d+)?$/.test(p.trim())))return NaN;
+  const nums=parts.map(Number); if(nums.slice(1).some(n=>n>=60))return NaN;
+  return nums.length===2?nums[0]*60+nums[1]:nums[0]*3600+nums[1]*60+nums[2];
+}
+function parseRanges(){
+ const raw=timesInput.value.trim(); if(!raw)throw Error("Paste at least one start and end timestamp.");
+ const lines=raw.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+ if(lines.length>25)throw Error("Maximum 25 clips per job. Remove extra timestamp lines.");
+ return lines.map((line,i)=>{
+  let pair=line.split(/\s*(?:-->|->|–|—|,|\s-\s)\s*/);
+  if(pair.length!==2)pair=line.match(/^\s*(\d+(?::\d+){1,2}(?:\.\d+)?)\s+(\d+(?::\d+){1,2}(?:\.\d+)?)\s*$/)?.slice(1)||[];
+  if(pair.length!==2)throw Error("Line "+(i+1)+": use START - END, for example 00:01:00 - 00:01:16.");
+  const start=parseTime(pair[0]),end=parseTime(pair[1]);
+  if(!Number.isFinite(start)||!Number.isFinite(end)||start<0||end<=start)throw Error("Line "+(i+1)+": the end time must be after the start time.");
+  if(end-start>180)throw Error("Line "+(i+1)+": each clip must be 3 minutes or shorter.");
+  if(sourceFile&&Number.isFinite(preview.duration)&&preview.duration>0&&end>preview.duration+0.25)throw Error("Line "+(i+1)+": end timestamp is beyond the video duration ("+preview.duration.toFixed(1)+" seconds).");
+  return {start,end,duration:end-start,index:i};
+ });
+}
+function updateReady(){
+ const hasFile=!!sourceFile, hasTimes=!!timesInput.value.trim();
+ cutBtn.disabled=busy||!hasFile||!hasTimes;
+}
+fileInput.addEventListener("change",()=>{
+ sourceFile=fileInput.files&&fileInput.files[0]||null;
+ completed=[];results.innerHTML='<div class="help">No clips created yet.</div>';$("downloadAll").disabled=true;
+ if(preview.src)URL.revokeObjectURL(preview.src);
+ if(sourceFile){$("fileTitle").textContent=sourceFile.name;$("fileMeta").textContent=(sourceFile.size/1048576).toFixed(1)+" MB • selected";preview.src=URL.createObjectURL(sourceFile);preview.style.display="block";setStatus("Video selected. Add your AI timestamps, then cut.",false);}
+ else{$("fileTitle").textContent="＋ Choose video";$("fileMeta").textContent="MP4, MOV, WEBM, MKV or AVI";preview.removeAttribute("src");preview.style.display="none";}
+ updateReady();
+});
+timesInput.addEventListener("input",updateReady);
+async function fetchJson(url,options){
+ const response=await fetch(url,options);let data={};try{data=await response.json()}catch{}
+ if(!response.ok||data.ok===false)throw Error(data.error||("Server request failed ("+response.status+")."));
+ return data;
+}
+async function upload(){
+ const form=new FormData();form.append("video",sourceFile,sourceFile.name);
+ setStatus("Uploading original video to the server…",true);
+ const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),8*60*1000);
+ try{return await fetchJson("/api/upload",{method:"POST",body:form,signal:controller.signal});}
+ catch(e){if(e.name==="AbortError")throw Error("Upload timed out. Try a smaller video or a stronger connection.");throw e;}
+ finally{clearTimeout(timer);}
+}
+async function renderOne(source,clip){
+ const created=await fetchJson("/api/process",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({source,start:clip.start,duration:clip.duration,index:clip.index,forceLandscape:true})});
+ const jobId=created.jobId;if(!jobId)throw Error("Server did not return a processing job ID.");
+ const started=Date.now();
+ while(Date.now()-started<10*60*1000){
+  await new Promise(resolve=>setTimeout(resolve,1200));
+  const job=await fetchJson("/api/jobs/"+encodeURIComponent(jobId),{cache:"no-store"});
+  if(job.status==="done"&&job.url)return job;
+  if(job.status==="failed")throw Error(job.error||"Server could not cut this clip.");
+  const pct=Number(job.progress)||0;
+  setStatus("Cutting clip "+(clip.index+1)+" of "+ranges.length+" on server… "+pct+"% of this clip",true);
+ }
+ throw Error("Server took too long on this clip. Try a smaller source video.");
+}
+function addResult(clip,url){
+ const item={...clip,url,name:"zlatyn-clip-"+String(clip.index+1).padStart(2,"0")+".mp4"};completed.push(item);
+ const row=document.createElement("div");row.className="result";
+ const info=document.createElement("div");info.className="info";
+ const title=document.createElement("strong");title.textContent="Clip "+(clip.index+1);
+ const detail=document.createElement("small");detail.textContent=fmt(clip.start)+" → "+fmt(clip.end)+" • "+fmt(clip.duration);
+ info.append(title,detail);
+ const a=document.createElement("a");a.className="download";a.href=url;a.download=item.name;a.textContent="Download";a.rel="noopener";
+ row.append(info,a);
+ if(results.querySelector(".help"))results.innerHTML="";
+ results.append(row);$("downloadAll").disabled=!completed.length;
+}
+function fmt(sec){sec=Math.floor(sec);const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;return h?String(h).padStart(2,"0")+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0"):String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");}
+let ranges=[];
+cutBtn.addEventListener("click",async()=>{
+ if(busy)return;
+ if(!sourceFile){setStatus("Choose a video first.",false);return;}
+ try{ranges=parseRanges();}catch(e){setStatus(e.message,false);return;}
+ busy=true;updateReady();progress.style.width="0%";completed=[];results.innerHTML="";$("downloadAll").disabled=true;
+ try{
+  const health=await fetchJson("/api/health",{cache:"no-store"});
+  if(!health.ffmpegAvailable)throw Error(health.error||"The server's video cutter is not ready. Try again shortly.");
+  const uploadResult=await upload();
+  if(!uploadResult.sourceRef)throw Error("Server uploaded the video but did not return its reference.");
+  for(let i=0;i<ranges.length;i++){
+   const clip=ranges[i];
+   setStatus("Preparing clip "+(i+1)+" of "+ranges.length+"…",true);
+   try{const job=await renderOne(uploadResult.sourceRef,clip);addResult(clip,job.url);}
+   catch(e){const row=document.createElement("div");row.className="result";const info=document.createElement("div");info.className="info";const title=document.createElement("strong");title.textContent="Clip "+(clip.index+1)+" failed";const detail=document.createElement("small");detail.textContent=e.message;info.append(title,detail);row.append(info);results.append(row);}
+   progress.style.width=Math.round((i+1)/ranges.length*100)+"%";
   }
-  function fmtSize(b) {
-    return b < 1048576 ? (b / 1024).toFixed(1) + " KB" : (b / 1048576).toFixed(2) + " MB";
-  }
-  function $(id) { return document.getElementById(id); }
-
-  var file = null, url = "", duration = 0, peaks = [], clips = [];
-  var clipCount = 10, clipLen = 15, aspect = "16:9";
-  var percentStart = 0, percentEnd = 100;
-  var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (navigator.deviceMemory && navigator.deviceMemory <= 4);
-  var analysisSession = 0, analysisForUrl = "";
-  // Mobile-safe defaults: fewer clips, shorter default length
-  if (isMobile) {
-    clipCount = 5;
-  }
-  var analyzing = false, generating = false, cutting = false;
-  // No face model or tracking: keep analysis fast and output clean.
-
-  var videoEl = $("previewVideo");
-  videoEl.preload = "metadata";
-  var waveCanvas = $("waveCanvas");
-  var timelineCanvas = $("timelineCanvas");
-  var dropZone = $("dropZone");
-  var fileInput = $("fileInput");
-
-  function layout() {
-    var g = $("studioGrid");
-    g.style.gridTemplateColumns = window.innerWidth >= 1024 ? "1.15fr 0.85fr" : "1fr";
-    if (window.innerWidth >= 768) $("hdrBadge").style.display = "inline";
-  }
-  layout();
-  window.addEventListener("resize", layout);
-
-  function setStatus(msg, working) {
-    var p = $("statusPill");
-    p.textContent = msg || "Idle";
-    if (working) {
-      p.style.background = "rgba(34,211,238,.1)";
-      p.style.borderColor = "rgba(34,211,238,.3)";
-      p.style.color = "#22D3EE";
-    } else {
-      p.style.background = "#020617";
-      p.style.borderColor = "#1E293B";
-      p.style.color = "#94a3b8";
-    }
-  }
-  function setProgress(pct) {
-    $("progressBar").style.width = Math.max(0, Math.min(100, pct)) + "%";
-  }
-  function updateMeta() {
-    var mp = $("metaPill");
-    if (duration > 0) {
-      mp.style.display = "inline";
-      mp.textContent = fmtTime(duration) + " • " + peaks.length + " peaks";
-    } else mp.style.display = "none";
-    $("peakCount").textContent = duration ? peaks.length + " candidates" : "—";
-  }
-  function updateGenLabel() {
-    $("generateBtn").textContent = "Generate " + clipCount + " Clips • " + clipLen + "s • " + aspect;
-  }
-
-  // ---- Hook-first editor intelligence (local, no paid AI) ----
-  // The browser does not transcribe or understand words. It ranks observable signals:
-  // audio onset, speech-like energy, visual change, sustained activity, low dead-air,
-  // and nearby payoff potential. The chosen moment is brought close to the start of
-  // the exported clip so the first 2–4 seconds carry the strongest available hook.
-  var MIN_HOOK_SCORE = 30;
-
-  function clamp01(v) {
-    return Math.max(0, Math.min(1, Number(v) || 0));
-  }
-
-  function normalizeArray(values) {
-    var max = 0;
-    for (var i = 0; i < values.length; i++) max = Math.max(max, values[i] || 0);
-    if (max <= 0) return values.map(function(){ return 0; });
-    return values.map(function(v){ return clamp01(v / max); });
-  }
-
-  function fallbackPeaks(dur, len, maxC) {
-    // Deliberately returns NO fake low-quality candidates.
-    // If analysis cannot find a 30+ moment, the generator must show fewer clips.
-    return [];
-  }
-
-  /*
-   * ZLATYN EDITOR INTELLIGENCE
-   * --------------------------
-   * This is the editor's decision policy. It is deliberately conservative:
-   * - A loud moment is NOT automatically a good clip.
-   * - A good clip needs an attention trigger, continuation and a satisfying endpoint.
-   * - Context, dead air, repetition and weak endings are penalized.
-   * - Similar moments are suppressed so a batch has variety.
-   *
-   * Semantic word understanding requires transcription/LLM input. This browser-only
-   * engine therefore uses observable audio/visual/story signals and keeps that
-   * limitation explicit rather than pretending waveform energy understands language.
-   */
-  var ZLATYN_EDITOR_KNOWLEDGE = {
-    minScore: 30,
-    principles: [
-      "hook fast",
-      "create curiosity",
-      "deliver value or emotion",
-      "preserve story logic",
-      "finish after payoff",
-      "remove filler without destroying timing",
-      "prefer clarity over effects",
-      "quality over quantity",
-      "diversify moments",
-      "never fabricate spoken meaning"
-    ],
-    hookArchetypes: [
-      "QUESTION / OPEN LOOP",
-      "SHOCK / BOLD CLAIM",
-      "STORY / REVELATION",
-      "REACTION / COMEDY",
-      "HOW-TO / VALUE",
-      "CONFLICT / OPINION",
-      "EMOTIONAL / CONFESSION",
-      "RESULT / TRANSFORMATION",
-      "MISTAKE / LESSON",
-      "NUMBER / SPECIFIC FACT"
-    ],
-    editRules: {
-      talkingHead: "clean cuts + restrained punch-ins at emphasis",
-      podcast: "speaker clarity + context + natural timing",
-      comedy: "preserve setup and silence before punchline",
-      story: "setup -> tension -> reveal -> payoff",
-      education: "claim -> explanation -> example -> takeaway",
-      reaction: "trigger -> reaction -> commentary"
-    }
-  };
-
-  function inferMomentType(f) {
-    var types = [];
-    if (f.onset > 0.62 && f.speech > 0.58) types.push("QUESTION / OPEN LOOP");
-    if (f.onset > 0.70 && f.emotion > 0.62) types.push("SHOCK / BOLD CLAIM");
-    if (f.story > 0.58 && f.futurePeak > f.now * 1.08) types.push("STORY / REVELATION");
-    if (f.visual > 0.62 && f.emotion > 0.60) types.push("REACTION / COMEDY");
-    if (f.speech > 0.68 && f.sustain > 0.60) types.push("HOW-TO / VALUE");
-    if (f.onset > 0.60 && f.speech > 0.62 && f.emotion > 0.56) types.push("CONFLICT / OPINION");
-    if (f.emotion > 0.78 && f.sustain > 0.55) types.push("EMOTIONAL / CONFESSION");
-    if (f.futurePeak > 0.72 && f.sustain > 0.58) types.push("RESULT / TRANSFORMATION");
-    if (f.onset > 0.58 && f.speech > 0.55 && f.story > 0.55) types.push("MISTAKE / LESSON");
-    if (f.speech > 0.65 && f.specificity > 0.58) types.push("NUMBER / SPECIFIC FACT");
-    if (f.distinctiveness > 0.68 && f.onset > 0.56) types.push("SUDDEN TURN / STANDOUT MOMENT");
-    if (!types.length) types.push("STRONG MOMENT");
-    return types.slice(0, 2);
-  }
-
-  function scoreHookSamples(samples, dur, len) {
-    if (!samples.length) return [];
-
-    var audio = normalizeArray(samples.map(function(s){ return s.audio || 0; }));
-    var visual = normalizeArray(samples.map(function(s){ return s.visual || 0; }));
-    var onset = normalizeArray(samples.map(function(s){ return s.onset || 0; }));
-    var speech = normalizeArray(samples.map(function(s){ return s.speech || 0; }));
-
-    var sustain = [], futurePeakArr = [], futureAvgArr = [], localArr = [];
-    for (var i = 0; i < samples.length; i++) {
-      var horizon = Math.min(Math.max(4.5, len * 0.30), 12);
-      var endT = samples[i].t + horizon;
-      var sum = 0, count = 0, maxLocal = 0;
-      for (var j = i; j < samples.length && samples[j].t <= endT; j++) {
-        var e = 0.56 * audio[j] + 0.22 * visual[j] + 0.22 * speech[j];
-        sum += e; count++;
-        if (e > maxLocal) maxLocal = e;
-      }
-      sustain.push(count ? clamp01((sum / count) * 1.12 + maxLocal * 0.18) : 0);
-      futurePeakArr.push(maxLocal);
-      futureAvgArr.push(count ? sum / count : 0);
-      localArr.push(count ? maxLocal : 0);
-    }
-
-    var scored = [];
-    for (var k = 0; k < samples.length; k++) {
-      var s = samples[k];
-      var prev = k > 0 ? (0.56 * audio[k-1] + 0.22 * visual[k-1] + 0.22 * speech[k-1]) : 0;
-      var now = 0.56 * audio[k] + 0.22 * visual[k] + 0.22 * speech[k];
-      var delta = clamp01((now - prev + 0.12) / 1.12);
-      var futurePeak = futurePeakArr[k] || 0;
-      var futureAvg = futureAvgArr[k] || 0;
-      var local = Math.max(audio[k], visual[k], speech[k]);
-
-      // "Emotion" is a proxy for observable intensity, not a claim about human emotion.
-      var emotion = clamp01(
-        audio[k] * 0.42 +
-        visual[k] * 0.18 +
-        onset[k] * 0.28 +
-        speech[k] * 0.12
-      );
-
-      // Curiosity proxy: an attention change followed by enough material to develop.
-      var curiosity = clamp01(
-        onset[k] * 0.42 +
-        delta * 0.18 +
-        sustain[k] * 0.22 +
-        Math.max(0, futurePeak - now) * 0.70
-      );
-
-      // Story proxy: setup at the start, development afterward, then a stronger point.
-      var story = clamp01(
-        sustain[k] * 0.34 +
-        futureAvg * 0.26 +
-        futurePeak * 0.30 +
-        Math.max(0, futurePeak - now) * 0.45
-      );
-
-      // Clarity proxy: speech presence + sustained signal, with a penalty for silence.
-      var deadAir = (audio[k] < 0.12 && speech[k] < 0.12 && visual[k] < 0.12) ? 1 : 0;
-      var clarity = clamp01(
-        speech[k] * 0.52 +
-        sustain[k] * 0.38 +
-        local * 0.10 -
-        deadAir * 0.35
-      );
-
-      // Specificity cannot know the actual words, so use a conservative proxy:
-      // strong speech onset + distinct audio/visual change suggests a concrete statement.
-      var specificity = clamp01(
-        speech[k] * 0.42 +
-        onset[k] * 0.38 +
-        Math.abs(audio[k] - visual[k]) * 0.20
-      );
-
-      var position = dur > 0 ? s.t / dur : 0;
-      var positionScore =
-        position < 0.04 ? 0.90 :
-        position < 0.35 ? 1.00 :
-        position < 0.82 ? 0.95 :
-        position < 0.94 ? 0.72 : 0.34;
-
-      // A candidate should have enough future material for a payoff, but not endless tail.
-      var payoffPotential = clamp01(
-        futurePeak * 0.50 +
-        futureAvg * 0.24 +
-        sustain[k] * 0.26
-      );
-
-      // Detect a likely "drop" after the strong point so we can end before dead tail.
-      var tailEnd = Math.min(samples.length - 1, k + Math.max(2, Math.round((len / Math.max(0.45, dur / 150)) * 0.55)));
-      var tailSum = 0, tailN = 0;
-      for (var tk = k + 1; tk <= tailEnd; tk++) {
-        tailSum += 0.56 * audio[tk] + 0.22 * visual[tk] + 0.22 * speech[tk];
-        tailN++;
-      }
-      var tailLevel = tailN ? tailSum / tailN : now;
-      var cleanEnding = clamp01(0.62 + (now - tailLevel) * 0.55);
-      var outroPenalty = position > 0.94 ? 0.28 : 0;
-
-      /*
-       * The 100-point decision model:
-       * 22 attention/hook trigger
-       * 16 curiosity/open-loop proxy
-       * 10 sustained development
-       * 11 payoff potential
-       * 7 clarity/context
-       * 8 intensity/emotion proxy
-       * 6 speech-like energy
-       * 4 visual change
-       * 3 clean ending
-       * 3 position/context
-       * 10 local distinctiveness
-       *
-       * This intentionally avoids rewarding "loudest = best".
-       */
-      var attention = clamp01(onset[k] * 0.62 + delta * 0.38);
-      // Distinctiveness rewards a moment that stands out from its local context,
-      // rather than a loud but constant background or a random isolated spike.
-      var localBaseline = (prev + futureAvg) / 2;
-      var distinctiveness = clamp01(Math.max(0, now - localBaseline) * 1.8 + delta * 0.30 + onset[k] * 0.20);
-      var raw =
-        22 * attention +
-        16 * curiosity +
-        10 * sustain[k] +
-        11 * payoffPotential +
-        7 * clarity +
-        8 * emotion +
-        6 * speech[k] +
-        4 * visual[k] +
-        3 * cleanEnding +
-        3 * positionScore +
-        10 * distinctiveness;
-
-      // Penalties for known short-form failure modes.
-      if (deadAir) raw -= 12;
-      if (outroPenalty) raw -= 10 * outroPenalty;
-      if (futurePeak < 0.28 && sustain[k] < 0.35) raw -= 8;
-      if (position > 0.985) raw -= 8;
-
-      var score = Math.round(Math.max(0, Math.min(100, raw)));
-      // Keep lower-scoring ranked candidates too when more clips are requested.
-
-      // Hook-first lead: keep only a short breath of context before the selected moment.
-      // For a 30-second clip this puts the scored moment about 0.75 seconds after frame one.
-      var lead = Math.min(0.9, Math.max(0.35, len * 0.025));
-      var start = Math.max(0, s.t - lead);
-      if (start > dur - Math.min(len, dur) - 0.2) continue;
-
-      // Adaptive duration: a strong payoff may need more room; weak tail gets trimmed later.
-      var recommendedDuration = Math.min(
-        Math.max(8, len),
-        Math.max(8, Math.min(dur - start, len + (payoffPotential > 0.72 ? 4 : 0)))
-      );
-
-      var feature = {
-        onset:onset[k],
-        audio:audio[k],
-        visual:visual[k],
-        speech:speech[k],
-        sustain:sustain[k],
-        curiosity:curiosity,
-        story:story,
-        clarity:clarity,
-        emotion:emotion,
-        specificity:specificity,
-        futurePeak:futurePeak,
-        futureAvg:futureAvg,
-        now:now,
-        payoffPotential:payoffPotential,
-        distinctiveness:distinctiveness,
-        cleanEnding:cleanEnding
-      };
-
-      scored.push({
-        start:start,
-        peak:s.t,
-        score:score,
-        type:inferMomentType(feature),
-        reason:
-          score >= 80 ? "Hook-first candidate: strong attention + development + payoff signals" :
-          score >= 65 ? "Hook-first candidate: strong opening activity and continuation" :
-          score >= 50 ? "Hook-first candidate: useful opening signal with context" :
-          "Signal-based hook candidate above the minimum threshold",
-        recommendedDuration:recommendedDuration,
-        features:feature,
-        audio:audio[k],
-        visual:visual[k],
-        speech:speech[k],
-        onset:onset[k],
-        sustain:sustain[k]
-      });
-    }
-
-    scored.sort(function(a,b){ return b.score - a.score; });
-
-    // Non-max suppression + topic/moment diversity.
-    // Never flood the output with five nearly identical moments.
-    var picked = [];
-    var diversityGap = Math.max(2.5, Math.min(8, len * 0.45));
-    for (var p = 0; p < scored.length; p++) {
-      var candidate = scored[p];
-      var tooClose = false;
-      for (var q = 0; q < picked.length; q++) {
-        if (Math.abs(picked[q].start - candidate.start) < diversityGap) {
-          tooClose = true;
-          break;
-        }
-      }
-      if (!tooClose) picked.push(candidate);
-    }
-
-    return picked.slice(0, Math.max(1, Math.min(100, samples.length)));
-  }
-
-  function analyzePeaks(videoUrl, dur, len, maxC, onProgress) {
-    return new Promise(function (resolve) {
-      var video = document.createElement("video");
-      video.src = videoUrl;
-      video.muted = true;
-      video.playsInline = true;
-      video.preload = "auto";
-      video.crossOrigin = "anonymous";
-      video.volume = 0;
-
-      var samples = [];
-      // Dense sampling in the opening seconds improves hook timing; coarser sampling
-      // later keeps long-video analysis within a reasonable time on free hosting.
-      var step = 0.75;
-      var t = 0, done = false, previousEnergy = 0;
-      var canvas = document.createElement("canvas");
-      canvas.width = 160;
-      canvas.height = 90;
-      var ctx2d = canvas.getContext("2d", { willReadFrequently: true });
-      var prevFrame = null;
-      var AC = window.AudioContext || window.webkitAudioContext;
-      var actx = null, analyser = null, source = null, td = null, fd = null;
-
-      function cleanup() {
-        done = true;
-        try { video.pause(); } catch (e) {}
-        try { if (source) source.disconnect(); } catch (e) {}
-        try { if (actx) actx.close(); } catch (e) {}
-        video.removeAttribute("src");
-        video.load();
-      }
-
-      function finish() {
-        if (done && !samples.length) {
-          resolve([]);
-          return;
-        }
-        cleanup();
-        var scored = scoreHookSamples(samples, dur, len);
-        scored.sort(function(a,b){ return b.score - a.score; });
-        resolve(scored.slice(0, Math.max(maxC, 1)));
-      }
-
-      function measure() {
-        var audioScore = 0, visualScore = 0, speechScore = 0;
-
-        if (analyser && td && fd) {
-          analyser.getByteTimeDomainData(td);
-          analyser.getByteFrequencyData(fd);
-
-          var sum = 0;
-          for (var i = 0; i < td.length; i++) {
-            var v = (td[i] - 128) / 128;
-            sum += v * v;
-          }
-          var rms = Math.sqrt(sum / td.length);
-
-          var low = 0, mid = 0, high = 0;
-          var split1 = Math.floor(fd.length * 0.08);
-          var split2 = Math.floor(fd.length * 0.45);
-          for (var f = 0; f < fd.length; f++) {
-            var fv = fd[f] / 255;
-            if (f < split1) low += fv;
-            else if (f < split2) mid += fv;
-            else high += fv;
-          }
-          low /= Math.max(1, split1);
-          mid /= Math.max(1, split2 - split1);
-          high /= Math.max(1, fd.length - split2);
-
-          audioScore = clamp01(rms * 4.2 + mid * 1.8 + low * 0.6);
-          // Speech-like material generally carries useful mid-band energy.
-          speechScore = clamp01(mid * 1.8 + high * 0.55 + rms * 1.2);
-        }
-
-        if (ctx2d && video.videoWidth) {
-          try {
-            ctx2d.drawImage(video, 0, 0, canvas.width, canvas.height);
-            var frame = ctx2d.getImageData(0, 0, canvas.width, canvas.height).data;
-            if (prevFrame) {
-              var diff = 0, n = frame.length;
-              for (var j = 0; j < n; j += 16) diff += Math.abs(frame[j] - prevFrame[j]);
-              visualScore = clamp01((diff / (n / 16)) / 255 * 2.2);
-            }
-            prevFrame = frame;
-          } catch (e) {}
-        }
-
-        var currentEnergy = clamp01(audioScore * 0.60 + visualScore * 0.25 + speechScore * 0.15);
-        var onset = clamp01((currentEnergy - previousEnergy) * 4 + currentEnergy * 0.20);
-        previousEnergy = currentEnergy;
-
-        samples.push({
-          t: t,
-          audio: audioScore,
-          visual: visualScore,
-          speech: speechScore,
-          onset: onset
-        });
-      }
-
-      function sampleAt() {
-        if (done) return;
-        if (t >= dur - 0.15) {
-          finish();
-          return;
-        }
-
-        var target = Math.min(t, dur - 0.05);
-        var onSeeked = function () {
-          video.removeEventListener("seeked", onSeeked);
-          var p = video.play();
-          if (p && p.catch) p.catch(function () {});
-          setTimeout(function () {
-            if (done) return;
-            video.pause();
-            measure();
-            if (onProgress) onProgress(Math.min(99, Math.round((t / dur) * 100)));
-            t += step; step = t < Math.min(8, dur) ? 0.75 : Math.max(1.5, dur / 160);
-            sampleAt();
-          }, 70);
-        };
-
-        video.addEventListener("seeked", onSeeked);
-        try {
-          if (Math.abs(video.currentTime - target) < 0.05) onSeeked();
-          else video.currentTime = target;
-        } catch (e) {
-          t += step; step = t < Math.min(8, dur) ? 0.4 : Math.max(1.0, dur / 120);
-          sampleAt();
-        }
-      }
-
-      video.addEventListener("loadedmetadata", function () {
-        try {
-          if (AC) {
-            actx = new AC();
-            if (actx.state === "suspended") actx.resume().catch(function(){});
-            source = actx.createMediaElementSource(video);
-            analyser = actx.createAnalyser();
-            analyser.fftSize = 2048;
-            analyser.smoothingTimeConstant = 0.15;
-            source.connect(analyser);
-            var gain = actx.createGain();
-            gain.gain.value = 0.0001;
-            analyser.connect(gain);
-            gain.connect(actx.destination);
-            td = new Uint8Array(analyser.fftSize);
-            fd = new Uint8Array(analyser.frequencyBinCount);
-          }
-        } catch (e) {}
-        sampleAt();
-      });
-
-      video.addEventListener("error", function () { finish(); });
-      setTimeout(function () { if (!done) finish(); }, Math.min(90000, dur * 120 + 15000));
-    });
-  }
-
-  // Clip rendering is handled by the native server backend; no browser FFmpeg fallback.
-
-  function drawWave() {
-    if (!waveCanvas || duration === 0) return;
-    var c = waveCanvas, ctx = c.getContext("2d", { alpha: false });
-    if (!ctx) return;
-    var W = c.width = (c.clientWidth * 2) || 600, H = c.height = 80;
-    ctx.fillStyle = "#0F172A"; ctx.fillRect(0, 0, W, H);
-    var bars = Math.min(180, Math.floor(duration * 2)), gap = 2, bw = (W - bars * gap) / bars;
-    for (var i = 0; i < bars; i++) {
-      var t = (i / bars) * duration, peak = null;
-      for (var j = 0; j < peaks.length; j++) {
-        if (Math.abs(peaks[j].start - t) < 0.8) { peak = peaks[j]; break; }
-      }
-      var normalizedScore = peak ? Math.max(0.12, Math.min(1, Number(peak.score || 0) / 100)) : 0.12;
-      var h = normalizedScore * H * 0.85;
-      ctx.fillStyle = peak ? (Number(peak.score || 0) >= 65 ? "#22D3EE" : "#3B82F6") : "#1E293B";
-      ctx.fillRect(i * (bw + gap), H - h, bw, h);
-      if (peak) { ctx.fillStyle = "#22D3EE"; ctx.fillRect(i * (bw + gap) + bw / 2 - 1, 0, 2, 5); }
-    }
-  }
-
-  function drawTimeline() {
-    if (!timelineCanvas || duration === 0) return;
-    var c = timelineCanvas, ctx = c.getContext("2d", { alpha: false });
-    if (!ctx) return;
-    var W = c.width = (c.clientWidth * 2) || 600, H = c.height = 120;
-    ctx.fillStyle = "#020617"; ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = "#1E293B"; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.stroke();
-    for (var i = 0; i < clips.length; i++) {
-      var cl = clips[i], x = (cl.start / duration) * W, w = (cl.duration / duration) * W;
-      ctx.fillStyle = cl.isReal ? "rgba(34,211,238,0.9)" : "rgba(37,99,235,0.7)";
-      ctx.fillRect(x, 8, Math.max(4, w), H - 16);
-      ctx.fillStyle = "#0F172A"; ctx.fillRect(x, 8, 2, H - 16);
-    }
-  }
-
-  function loadFile(f) {
-    var hasVideoMime = !!(f && f.type && f.type.indexOf("video/") === 0);
-    var hasVideoExtension = !!(f && /\.(mp4|mov|m4v|webm|mkv|avi)$/i.test(f.name || ""));
-    if (!f || (!hasVideoMime && !hasVideoExtension)) { setStatus("Choose a video file (MP4, MOV, WEBM, MKV or AVI)."); return; }
-    if (url) URL.revokeObjectURL(url);
-    for (var i = 0; i < clips.length; i++) {
-      if (clips[i].realBlobUrl) URL.revokeObjectURL(clips[i].realBlobUrl);
-    }
-    analysisSession++;
-    analysisForUrl = "";
-    analyzing = false;
-    file = f; url = URL.createObjectURL(f); clips = []; peaks = []; duration = 0;
-    setProgress(0);
-    $("ytWrap").style.display = "none"; $("ytWrap").innerHTML = "";
-    videoEl.style.display = "block"; $("previewEmpty").style.display = "none";
-    videoEl.src = url;
-    $("fileName").textContent = f.name;
-    $("fileMeta").textContent = fmtSize(f.size) + " • reading duration…";
-    setStatus("Loaded " + f.name);
-    renderResults(); updateMeta();
-  }
-
-  dropZone.addEventListener("click", function () { fileInput.click(); });
-  dropZone.addEventListener("dragover", function (e) { e.preventDefault(); dropZone.classList.add("drag-active"); });
-  dropZone.addEventListener("dragleave", function () { dropZone.classList.remove("drag-active"); });
-  dropZone.addEventListener("drop", function (e) {
-    e.preventDefault(); dropZone.classList.remove("drag-active");
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
-  });
-  fileInput.addEventListener("change", function () {
-    if (fileInput.files && fileInput.files[0]) loadFile(fileInput.files[0]);
-  });
-
-  videoEl.addEventListener("loadedmetadata", function () {
-    if (!isFinite(videoEl.duration) || !url || analysisForUrl === url || analyzing) return;
-    var thisUrl = url;
-    var thisSession = ++analysisSession;
-    analysisForUrl = thisUrl;
-    duration = videoEl.duration;
-    $("fileMeta").textContent = fmtSize(file.size) + " • " + fmtTime(duration);
-    $("generateBtn").disabled = false;
-    analyzing = true;
-    setStatus("Scanning for hook moments • detailed opening analysis…", true);
-    // Mobile browsers can crash when the preview decoder and analysis decoder
-    // simultaneously open a large source. Release the preview decoder while scanning.
-    try { videoEl.pause(); videoEl.removeAttribute("src"); videoEl.load(); } catch (e) {}
-    analyzePeaks(thisUrl, duration, clipLen, 200, function (p) { setProgress(p); })
-      .then(function (list) {
-        if (thisSession !== analysisSession || thisUrl !== url) return;
-        peaks = list; analyzing = false; setProgress(0);
-        setStatus("Analysis ready • " + fmtTime(duration) + " • " + list.length + " ranked moments");
-        updateMeta(); drawWave();
-      })
-      .catch(function () {
-        if (thisSession !== analysisSession || thisUrl !== url) return;
-        peaks = [];
-        analyzing = false; setProgress(0);
-        setStatus("Analysis failed. Try a smaller video or reload the page.");
-        updateMeta(); drawWave();
-      })
-      .finally(function () {
-        if (thisSession === analysisSession && thisUrl === url) {
-          videoEl.src = thisUrl;
-          videoEl.preload = "metadata";
-        }
-      });
-  });
-
-  $("loadLinkBtn").addEventListener("click", function () {
-    var p = $("linkInput").value.trim();
-    if (!p) { setStatus("Paste a YouTube or MP4 link first"); return; }
-    var m = p.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
-    if (m) {
-      videoEl.style.display = "none"; $("previewEmpty").style.display = "none";
-      $("ytWrap").style.display = "block";
-      $("ytWrap").innerHTML = '<iframe style="width:100%;height:100%;border:0" src="https://www.youtube.com/embed/' + m[1] + '" allowfullscreen></iframe>';
-      setStatus("YouTube preview only — upload a file to clip");
-      return;
-    }
-    setStatus("Upload a video file to clip");
-  });
-
-  function syncCount(v) {
-    clipCount = Math.min(25, Math.max(1, v));
-    $("clipCount").value = clipCount; $("clipCountNum").value = clipCount;
-    $("clipCountVal").textContent = clipCount; updateGenLabel();
-  }
-  $("clipCount").addEventListener("input", function () { syncCount(parseInt($("clipCount").value, 10)); });
-  $("clipCountNum").addEventListener("change", function () { syncCount(parseInt($("clipCountNum").value, 10) || 1); });
-  function syncPercentages(changed) {
-    var a = parseInt($("percentStart").value,10)||0, b = parseInt($("percentEnd").value,10)||100;
-    if (a >= b) { if (changed === "start") b = Math.min(100,a+5); else a = Math.max(0,b-5); }
-    percentStart=a; percentEnd=b; $("percentStart").value=a; $("percentEnd").value=b;
-    $("percentStartVal").textContent=a+"%"; $("percentEndVal").textContent=b+"%";
-  }
-  $("percentStart").addEventListener("input",function(){syncPercentages("start");});
-  $("percentEnd").addEventListener("input",function(){syncPercentages("end");});
-
-  function setLen(s) {
-    clipLen = s; $("customLen").value = s;
-    document.querySelectorAll(".len-btn").forEach(function (b) {
-      var active = parseInt(b.getAttribute("data-len"), 10) === s;
-      b.style.background = active ? "#fff" : "#020617";
-      b.style.color = active ? "#000" : "#cbd5e1";
-      b.style.borderColor = active ? "#fff" : "#1E293B";
-    });
-    updateGenLabel();
-  }
-  document.querySelectorAll(".len-btn").forEach(function (b) {
-    b.addEventListener("click", function () { setLen(parseInt(b.getAttribute("data-len"), 10)); });
-  });
-  $("customLen").addEventListener("change", function () {
-    setLen(Math.min(180, Math.max(5, parseInt($("customLen").value, 10) || 5)));
-  });
-
-  function setAspect(a) {
-    aspect = "16:9"; $("aspectBadge").textContent = "16:9 landscape";
-    updateGenLabel();
-  }
-
-
-  var backendState = null;
-
-  async function getBackendState(){
-    var controller=new AbortController();
-    var timer=setTimeout(function(){controller.abort();},90000);
-    try{
-      setStatus("Waking the video server and checking FFmpeg…",true);
-      var response=await fetch("/api/health",{cache:"no-store",signal:controller.signal});
-      var data={};
-      try{data=await response.json();}catch(e){}
-      if(!response.ok || !data || !data.ok || !data.ffmpegAvailable) {
-        throw new Error(data.error || data.message || ("Backend health check failed ("+response.status+")."));
-      }
-      backendState=data;
-      return backendState;
-    }catch(e){
-      var message=e&&e.name==="AbortError"
-        ? "The server did not wake up within 90 seconds. Wait a little and try again."
-        : (e&&e.message?e.message:"Backend is unreachable");
-      backendState={backend:false,storageConfigured:false,error:message};
-      return backendState;
-    }finally{
-      clearTimeout(timer);
-    }
-  }
-
-  async function uploadSourceToBackend(sourceFile){
-    var form=new FormData();
-    form.append("video",sourceFile,sourceFile.name||"video.mp4");
-    setProgress(8);
-    setStatus("Uploading video to the processing server…",true);
-    var controller=new AbortController();
-    var timer=setTimeout(function(){controller.abort();},180000);
-    try {
-      var response=await fetch("/api/upload",{method:"POST",body:form,signal:controller.signal});
-      var data={};
-      try{data=await response.json();}catch(e){}
-      if(!response.ok || !data.ok) throw new Error(data.error||("Video upload failed ("+response.status+")."));
-      if(!data.sourceRef) throw new Error("Server received the upload but returned no video reference.");
-      setProgress(12);
-      setStatus("Upload complete • preparing clips…",true);
-      return data.sourceRef;
-    } catch(e) {
-      if(e && e.name==="AbortError") throw new Error("Upload timed out after 3 minutes. Try a smaller video.");
-      throw e;
-    } finally { clearTimeout(timer); }
-  }
-
-  async function processBackendClip(sourceRef,clip,index,total,caption){
-    var controller=new AbortController();
-    var timer=setTimeout(function(){controller.abort();},30000);
-    var jobId="";
-    try {
-      var response=await fetch("/api/process",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        signal:controller.signal,
-        body:JSON.stringify({
-          source:sourceRef,
-          start:clip.start,
-          duration:clip.duration,
-          index:index,
-          caption:caption||"",
-          cleanOutput: true,
-          forceLandscape: (videoEl.videoWidth / Math.max(1, videoEl.videoHeight)) < 1.70 || (videoEl.videoWidth / Math.max(1, videoEl.videoHeight)) > 1.80
-        })
-      });
-      var data={};
-      try{data=await response.json();}catch(e){}
-      if(!response.ok || !data.ok || !data.jobId) throw new Error(data.error||("Could not start clip "+(index+1)+" ("+response.status+")."));
-      jobId=data.jobId;
-    } catch(e) {
-      if(e && e.name==="AbortError") throw new Error("The server did not start clip "+(index+1)+" in time. Reload and try again.");
-      throw e;
-    } finally { clearTimeout(timer); }
-
-    var started=Date.now();
-    while(Date.now()-started<600000) {
-      await new Promise(function(resolve){setTimeout(resolve,2000);});
-      var statusResponse=await fetch("/api/jobs/"+encodeURIComponent(jobId),{cache:"no-store"});
-      var statusData={};
-      try{statusData=await statusResponse.json();}catch(e){}
-      if(!statusResponse.ok || !statusData.ok) throw new Error(statusData.error||"Lost connection to the rendering job.");
-      if(statusData.status==="done" && statusData.url) return statusData;
-      if(statusData.status==="failed") throw new Error(statusData.error||("FFmpeg failed on clip "+(index+1)+"; try a shorter source or clip length."));
-      var elapsed=Date.now()-started;
-      var segmentStart=15+(index/Math.max(1,total))*80;
-      var segmentWidth=80/Math.max(1,total);
-      var encoderProgress=Number(statusData.progress);
-      var hasEncoderProgress=Number.isFinite(encoderProgress) && encoderProgress>0;
-      var clipProgress=hasEncoderProgress
-        ? Math.min(99,Math.max(0,encoderProgress))/100
-        : Math.min(0.9,(elapsed/600000)*0.9);
-      setProgress(segmentStart+Math.min(segmentWidth*0.99,clipProgress*segmentWidth));
-      setStatus("Rendering clip "+(index+1)+"/"+total+" on server… "+(hasEncoderProgress?Math.round(encoderProgress)+"% encoded • ":"")+Math.ceil(elapsed/1000)+"s elapsed",true);
-    }
-    throw new Error("Clip "+(index+1)+" took longer than 10 minutes. Try a shorter clip length or smaller source video.");
-  }
-
-  async function runBackendClips(sourceRef,total,caption){
-    var next=0, completed=0, failed=0, concurrency=2;
-    async function worker(){
-      while(true){
-        var index=next++;
-        if(index>=total) return;
-        try{
-          setStatus("Server rendering clip "+(index+1)+"/"+total+" • native FFmpeg",true);
-          var data=await processBackendClip(sourceRef,clips[index],index,total,caption);
-          clips[index].realBlobUrl=data.url;
-          clips[index].blobUrl=data.url;
-          clips[index].downloadUrl=data.url;
-          clips[index].isReal=true;
-          completed++;
-        }catch(error){
-          failed++;
-          clips[index].serverError=error&&error.message?error.message:"Unknown processing error";
-          console.warn("Backend clip "+(index+1)+" failed:",error);
-        }
-        setProgress(15+Math.round((completed+failed)/Math.max(1,total)*80));
-        renderResults();
-      }
-    }
-    await Promise.all(Array.from({length:concurrency},worker));
-    return {completed:completed,failed:failed};
-  }
-
-  $("generateBtn").addEventListener("click", async function () {
-    if (!file || !url || duration === 0 || generating || analyzing) return;
-
-    generating = true;
-    $("generateBtn").disabled = true;
-    $("exportBtn").disabled = true;
-    setProgress(5);
-    setStatus("Selecting the strongest moments…", true);
-
-    // Rank scored moments only. Never invent hooks with evenly spaced fallback cuts.
-    // This is signal-based analysis, not semantic AI or speech transcription.
-    var minTime = duration * (percentStart / 100);
-    var maxTime = duration * (percentEnd / 100);
-    var candidates = (peaks || []).filter(function(item){
-      return item && Number.isFinite(Number(item.score)) && Number(item.peak) >= minTime && Number(item.peak) <= maxTime;
-    }).slice();
-
-    candidates.sort(function(a,b){ return b.score-a.score; });
-
-    var chosen = [];
-    for (var i = 0; i < candidates.length && chosen.length < clipCount; i++) {
-      var candidate = candidates[i];
-      var candidateStart = Math.max(0, Math.min(candidate.start, Math.max(0, duration - 1)));
-      // For sources shorter than the requested clip length, allow a hook with at least
-      // about eight seconds of remaining context instead of rejecting every later moment.
-      var latestStart = duration > clipLen
-        ? Math.max(0, duration - clipLen - 0.3)
-        : Math.max(0, duration - Math.min(8, duration));
-      if (candidateStart > latestStart) continue;
-
-      var separated = true;
-      for (var j = 0; j < chosen.length; j++) {
-        if (Math.abs(chosen[j].start - candidateStart) < Math.max(2.5, Math.min(8, clipLen * 0.45))) {
-          separated = false;
-          break;
-        }
-      }
-      if (separated) {
-        chosen.push({
-          start: candidateStart,
-          score: Number(candidate.score) || 0,
-          peak: candidate.peak || candidateStart,
-          type: candidate.type,
-          reason: candidate.reason,
-          recommendedDuration: candidate.recommendedDuration,
-          features: candidate.features,
-          audio: candidate.audio,
-          visual: candidate.visual,
-          speech: candidate.speech,
-          onset: candidate.onset,
-          sustain: candidate.sustain
-        });
-      }
-    }
-
-    if (chosen.length < clipCount) {
-      for (var k = 0; k < candidates.length && chosen.length < clipCount; k++) {
-        var extraCandidate = candidates[k];
-        var extraStart = Math.max(0, Math.min(extraCandidate.start, Math.max(0, duration - 1)));
-        var extraLimit = duration > clipLen ? Math.max(0, duration - clipLen - 0.3) : Math.max(0, duration - Math.min(8, duration));
-        if (extraStart > extraLimit) continue;
-        var duplicate = false;
-        for (var m = 0; m < chosen.length; m++) if (Math.abs(chosen[m].start - extraStart) < 2.5) { duplicate = true; break; }
-        if (duplicate) continue;
-        chosen.push({start:extraStart,score:Number(extraCandidate.score)||0,peak:extraCandidate.peak||extraStart,type:extraCandidate.type,reason:extraCandidate.reason,recommendedDuration:extraCandidate.recommendedDuration,features:extraCandidate.features,audio:extraCandidate.audio,visual:extraCandidate.visual,speech:extraCandidate.speech,onset:extraCandidate.onset,sustain:extraCandidate.sustain});
-      }
-    }
-
-    chosen.sort(function(a,b){ return b.score-a.score; });
-
-    // Use the best distinct scored candidates available; never invent evenly spaced cuts.
-
-    if (!chosen.length) {
-      setProgress(0);
-      setStatus("No ranked moments in that range. Widen the range or use a longer source video.");
-      renderResults();
-      generating = false;
-      $("generateBtn").disabled = false;
-      return;
-    }
-
-    chosen.sort(function(a,b){ return a.start-b.start; });
-
-    // Build result objects from qualified candidates only.
-    // Selects from ranked moments and avoids injecting random timeline cuts.
-    clips = chosen.map(function(item, idx) {
-      var start = Math.max(0, Math.min(item.start, Math.max(0, duration - 1)));
-      var requestedDuration = clipLen + (idx % 4);
-      var d = Math.min(requestedDuration, Math.max(1, duration - start));
-      var score = Math.max(0, Math.min(100, Number(item.score) || 0));
-      var type = Array.isArray(item.type) ? item.type.join(" + ") : (item.type || "Strong moment");
-      return {
-        id: idx,
-        start: start,
-        duration: d,
-        score: score,
-        hookScore: score,
-        viralPotential: Math.round(Math.min(100,
-          score * 0.55 +
-          ((item.features && item.features.curiosity) || 0) * 18 +
-          ((item.features && item.features.emotion) || 0) * 12 +
-          ((item.features && item.features.payoffPotential) || 0) * 15
-        )),
-        momentType: type,
-        reason: item.reason || "Qualified moment",
-        title: "Clip #" + (idx + 1) + " • " + type,
-        blobUrl: url + "#t=" + start.toFixed(2) + "," + (start + d).toFixed(2),
-        downloadUrl: url,
-        startFormatted: fmtTime(start),
-        realBlobUrl: null,
-        isReal: false
-      };
-    });
-
-    renderResults();
-    drawTimeline();
-
-    var caption="";
-    var total=clips.length;
-    var failed=0;
-
-    try {
-      setStatus("Connecting to the video-processing server…",true);
-      var backend=await getBackendState();
-      if(!backend.backend || !backend.ffmpegAvailable) {
-        throw new Error("The video-processing server is not responding. Please wait for Render to wake up, reload the page, and try again. Local fallback is disabled because it was causing the cutting screen to hang.");
-      }
-
-      var sourceRef=await uploadSourceToBackend(file);
-      var backendResult=await runBackendClips(sourceRef,total,caption);
-      failed=backendResult.failed;
-      $("exportBtn").disabled=!clips.some(function(c){return c.isReal;});
-      var readyCount=clips.filter(function(c){return c.isReal;}).length;
-      if(failed===0 && readyCount===total) {
-        setProgress(100);
-        setStatus("Finished • "+readyCount+" MP4 clips ready to download");
-      } else {
-        setProgress(100);
-        setStatus("Finished with "+failed+" failed. "+readyCount+" clips are ready; failed cards show the reason.");
-      }
-
-    } catch(error) {
-      console.error("Generator error:",error);
-      setProgress(0);
-      setStatus("Processing stopped: "+(error&&error.message?error.message:"unknown error"));
-    } finally {
-      generating=false;
-      $("generateBtn").disabled=false;
-    }
-  });
-
-  function renderResults() {
-    $("resultsCount").textContent = clips.length;
-    var grid = $("resultsGrid");
-    if (!clips.length) {
-      grid.innerHTML = '<div class="card" style="padding:32px;text-align:center;grid-column:1/-1"><div style="margin:0 auto;width:48px;height:48px;border-radius:50%;background:#020617;border:1px solid #1E293B;display:grid;place-items:center">🎬</div><div style="margin-top:12px;font-weight:700;font-size:14px">No clips yet</div><div class="muted" style="font-size:12px;margin-top:4px">Upload → wait for analysis → Generate → Download Cut</div></div>';
-      return;
-    }
-    var html = "";
-    for (var i = 0; i < clips.length; i++) {
-      var c = clips[i];
-      // Preview: for REAL use the short blob; for others use fragment (playback only)
-      var src = c.isReal && c.realBlobUrl ? c.realBlobUrl : (url + "#t=" + c.start.toFixed(2) + "," + (c.start + c.duration).toFixed(2));
-      html += '<div class="card" style="overflow:hidden;border-radius:18px">';
-      html += '<div style="position:relative;aspect-ratio:16/9;background:#000">';
-      html += '<video src="' + src + '" controls preload="metadata" playsinline style="width:100%;height:100%;object-fit:contain;background:#000"></video>';
-      html += '<div style="position:absolute;top:8px;left:8px;display:flex;gap:6px">';
-      var cardState = c.isReal ? "READY" : (c.serverError ? "FAILED" : "QUEUED");
-      var cardColor = c.isReal ? "background:#22D3EE;color:#000" : (c.serverError ? "background:#ef4444;color:#fff" : "background:#64748b;color:#fff");
-      html += '<span style="font-size:10px;padding:2px 8px;border-radius:999px;font-weight:700;' + cardColor + '">' + cardState + "</span>";
-      html += '<span style="font-size:10px;padding:2px 8px;border-radius:999px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);color:#fff">' + c.startFormatted + "</span></div>";
-      html += '<div style="position:absolute;top:8px;right:8px;font-size:10px;padding:2px 8px;border-radius:999px;background:linear-gradient(90deg,#2563EB,#06B6D4);color:#fff;font-weight:700">' + Math.round(c.score) + "/100 score</div></div>";
-      html += '<div style="padding:12px"><div style="font-weight:700;font-size:13px">' + c.title + "</div>";
-      html += '<div style="margin-top:4px;font-size:11px;color:#94a3b8">' + Math.round(c.duration) + "s cut • " + fmtTime(c.start) + " → " + fmtTime(c.start + c.duration) + "</div>";
-      html += '<div style="margin-top:5px;font-size:10px;color:#67e8f9">' + (c.momentType || "Strong moment") + " • Viral potential " + (c.viralPotential || Math.round(c.score)) + "/100</div>";
-      html += '<div style="margin-top:3px;font-size:10px;color:#64748b">' + (c.reason || "Qualified by the editor intelligence engine") + "</div>";
-      if (!c.isReal && c.serverError) {
-        html += '<div style="margin-top:6px;font-size:11px;color:#fca5a5;overflow-wrap:anywhere">' + String(c.serverError).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;") + '</div>';
-      } else if (!c.isReal && generating) {
-        html += '<div style="margin-top:6px;font-size:10px;color:#cbd5e1">Waiting for server render…</div>';
-      } else if (!c.isReal) {
-        html += '<div style="margin-top:6px;font-size:10px;color:#fca5a5">Not rendered. Press Generate to retry.</div>';
-      }
-      html += '<div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-      if (c.isReal) {
-        html += '<button data-dl="' + i + '" data-mode="video" style="height:36px;border-radius:999px;background:#fff;color:#000;font-size:12px;font-weight:700">Download</button>';
-      } else {
-        html += '<button disabled style="height:36px;border-radius:999px;background:#1E293B;color:#64748b;font-size:12px;font-weight:700;opacity:.6">' + (c.serverError ? "Failed" : "Queued") + '</button>';
-      }
-      html += '<button data-dl="' + i + '" data-mode="ffmpeg" style="height:36px;border-radius:999px;background:#020617;border:1px solid #1E293B;font-size:12px;font-weight:700;color:#e2e8f0">Download MP4</button>';
-      html += "</div></div></div>";
-    }
-    grid.innerHTML = html;
-    grid.querySelectorAll("[data-dl]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        downloadOne(clips[parseInt(btn.getAttribute("data-dl"), 10)], btn.getAttribute("data-mode"));
-      });
-    });
-  }
-
-  function triggerDownload(blobUrl, filename) {
-    var a = document.createElement("a");
-    a.href = blobUrl;
-    a.download = filename;
-    a.style.display = "none";
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function () { try { document.body.removeChild(a); } catch (e) {} }, 200);
-  }
-
-  // Clips are encoded sequentially during Generate; no second legacy renderer is used here.
-
-
-  function downloadOne(clip, mode) {
-    if (!clip || !clip.realBlobUrl) {
-      setStatus("This clip is not ready yet.");
-      return;
-    }
-    var name="Zlatyn_clip_"+(clip.id+1)+"_"+Math.round(clip.duration)+"s_16x9.mp4";
-    triggerDownload(clip.realBlobUrl,name);
-    setStatus("Downloaded clean landscape clip #"+(clip.id+1));
-  }
-
-  $("exportBtn").addEventListener("click",function(){
-    if(!clips.length||generating)return;
-    var ready=clips.filter(function(item){return item.isReal&&item.realBlobUrl;});
-    if(!ready.length){setStatus("Generate the clips first.");return;}
-
-    var i=0;
-    $("exportBtn").disabled=true;
-
-    function nextDownload(){
-      if(i>=ready.length){
-        $("exportBtn").disabled=false;
-        setProgress(100);
-        setStatus("Downloaded "+ready.length+" clips.");
-        setTimeout(function(){setProgress(0);},1800);
-        return;
-      }
-      var clip=ready[i];
-      var name="Zlatyn_clip_"+(clip.id+1)+"_"+Math.round(clip.duration)+"s_16x9.mp4";
-      triggerDownload(clip.realBlobUrl,name);
-      setProgress(5+Math.round((i/ready.length)*90));
-      setStatus("Downloading "+(i+1)+"/"+ready.length+"…",true);
-      i++;
-      setTimeout(nextDownload,600);
-    }
-    nextDownload();
-  });
-
-  if (isMobile) { $("clipCount").max = 50; $("clipCountNum").max = 50; }
-  setStatus("Idle");
-  setLen(15);
-  setAspect("16:9");
-  updateGenLabel();
+  if(completed.length===ranges.length)setStatus("Finished. All "+completed.length+" clips are ready to download.",false);
+  else setStatus("Finished with "+completed.length+" of "+ranges.length+" clips. Failed clips are listed below; try again with a smaller source if needed.",false);
+ }catch(e){setStatus(e.message||"Something went wrong. Please try again.",false);}
+ finally{busy=false;updateReady();}
+});
+$("downloadAll").addEventListener("click",async()=>{
+ if(!completed.length)return;
+ for(let i=0;i<completed.length;i++){
+  const a=document.createElement("a");a.href=completed[i].url;a.download=completed[i].name;a.rel="noopener";document.body.appendChild(a);a.click();a.remove();
+  setStatus("Download requested for clip "+(i+1)+" of "+completed.length+". If your browser asks, allow multiple downloads.",true);
+  await new Promise(resolve=>setTimeout(resolve,700));
+ }
+ setStatus("Requested downloads for all "+completed.length+" clips.",false);
+});
+fetch("/api/health",{cache:"no-store"}).then(r=>r.json()).then(d=>{if(d.ffmpegAvailable)setStatus("Processing server is ready. Upload a video and paste timestamps.",false);else setStatus("Server is waking up or FFmpeg is unavailable. You can select a video, then retry when the server is ready.",false);}).catch(()=>setStatus("Cannot reach the processing server right now. It may be waking up; try again shortly.",false));
+updateReady();
 })();
 </script>
-
-</body>
+</body></html>
