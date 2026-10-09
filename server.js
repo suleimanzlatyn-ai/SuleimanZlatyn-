@@ -81,10 +81,11 @@ app.post("/api/upload", upload.single("video"), async (req, res) => {
   }
 });
 
-function runFFmpeg(args) {
+function runFFmpeg(args, onProgress, durationSeconds) {
   return new Promise((resolve, reject) => {
-    const child = spawn(ffmpegPath, args, { stdio: ["ignore", "ignore", "pipe"] });
+    const child = spawn(ffmpegPath, args, { stdio: ["ignore", "pipe", "pipe"] });
     let stderr = "";
+    let stdoutBuffer = "";
     let settled = false;
     const finish = (err) => {
       if (settled) return;
@@ -96,6 +97,20 @@ function runFFmpeg(args) {
       child.kill("SIGKILL");
       finish(new Error("FFmpeg exceeded the 9-minute render limit. Try a shorter clip or smaller video."));
     }, 9 * 60 * 1000);
+    child.stdout.on("data", chunk => {
+      stdoutBuffer += chunk.toString();
+      const lines = stdoutBuffer.split(/\r?\n/);
+      stdoutBuffer = lines.pop() || "";
+      for (const line of lines) {
+        const match = line.match(/^out_time_ms=(\d+)$/);
+        if (match && typeof onProgress === "function") {
+          const ratio = Number(match[1]) / Math.max(1, Number(durationSeconds) * 1000000);
+          onProgress(Math.max(0, Math.min(99, Math.round(ratio * 100))));
+        } else if (line === "progress=end" && typeof onProgress === "function") {
+          onProgress(100);
+        }
+      }
+    });
     child.stderr.on("data", chunk => { stderr += chunk.toString(); if (stderr.length > 10000) stderr = stderr.slice(-10000); });
     child.on("error", err => finish(err));
     child.on("close", code => code === 0
@@ -129,7 +144,7 @@ app.post("/api/process", async (req, res) => {
   const id = crypto.randomUUID();
   const outputName = "zlatyn-clip-" + (Number.isFinite(Number(index)) ? Number(index) + 1 : 1) + "-" + id + ".mp4";
   const output = path.join(OUTPUTS, outputName);
-  jobs.set(id, { status: "queued", createdAt: Date.now(), url: null, error: null });
+  jobs.set(id, { status: "queued", createdAt: Date.now(), url: null, error: null, progress: 0 });
 
   // Respond immediately. Encoding continues in the background so a long FFmpeg run
   // cannot leave the browser waiting on one HTTP request until the platform times out.
@@ -145,7 +160,7 @@ app.post("/api/process", async (req, res) => {
         const text = safeText(String(caption).trim().slice(0, 180));
         vf += ",drawtext=text='" + text + "':fontcolor=white:fontsize=64:borderw=4:bordercolor=black:x=(w-text_w)/2:y=h*0.08";
       }
-      await runFFmpeg(["-hide_banner","-loglevel","error","-ss",String(s),"-i",input,"-t",String(d),"-vf",vf,"-c:v","libx264","-preset","ultrafast","-crf","24","-threads","1","-c:a","aac","-b:a","128k","-movflags","+faststart","-y",output]);
+      await runFFmpeg(["-hide_banner","-loglevel","error","-progress","pipe:1","-nostats","-ss",String(s),"-i",input,"-t",String(d),"-vf",vf,"-c:v","libx264","-preset","ultrafast","-crf","24","-threads","1","-c:a","aac","-b:a","128k","-movflags","+faststart","-y",output], progress => { job.progress = progress; }, d);
       job.status = "done";
       job.url = "/outputs/" + outputName;
       job.finishedAt = Date.now();
@@ -162,7 +177,7 @@ app.post("/api/process", async (req, res) => {
 app.get("/api/jobs/:jobId", (req, res) => {
   const job = jobs.get(req.params.jobId);
   if (!job) return res.status(404).json({ ok: false, error: "Processing job not found. Please generate the clip again." });
-  res.json({ ok: true, status: job.status, url: job.url, error: job.error });
+  res.json({ ok: true, status: job.status, url: job.url, error: job.error, progress: Number(job.progress) || 0 });
 });
 
 app.use(express.static(ROOT, { index: "index.html", etag: true }));
